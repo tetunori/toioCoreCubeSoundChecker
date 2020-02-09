@@ -1,0 +1,111 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>toio™Core Cube Sound Checker</title>
+
+    <!-- Webapp settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favion -->
+    <link rel="icon" href="./images/favicon.ico">
+
+    <!-- Stylesheet -->
+    <link href="https://cdn.muicss.com/mui-0.10.0/css/mui.min.css" rel="stylesheet" type="text/css"/>
+    <script src="https://cdn.muicss.com/mui-0.10.0/js/mui.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="index.css">
+    <link href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" rel="stylesheet">
+
+    <!-- dropify(overrides file input) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <link rel='stylesheet' href='http://cdn.rawgit.com/JeremyFagis/dropify/master/dist/css/dropify.min.css'/>  
+    <script src='http://cdn.rawgit.com/JeremyFagis/dropify/master/dist/js/dropify.min.js'></script>
+    
+    <!-- Code prettify -->
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+  </head>
+  
+  <body>    
+    <!-- Title -->
+    <div id="titleText" class="titleText"> 
+      toio™Core Cube Sound Checker
+    </div>
+
+    <!-- Description -->
+    <div id="descriptionText" class="descriptionText"> 
+      MIDI音源などを使ってtoio™Core CubeのSound機能をチェックできるシンプルツール<br>
+      A simple tool enables us to check Sound function of toio™Core Cube by using MIDI audio source and so on.
+    </div>
+
+    <!-- Operation -->
+    <table><tr>
+      <!-- Left region: Main functions -->
+      <td>
+        <div id="operation" class="operation"> 
+          <div class="operationTitleText"> 
+            1. Connect toio™Core Cube.
+          </div>
+          <div class="operationContent"> 
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" id="btConnectCube1">Connect Cube 1</button>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" id="btConnectCube2">Connect Cube 2</button>
+          </div>
+
+          <div class="operationTitleText"> 
+            2-1. Test a single note.
+          </div>
+          <div class="operationContent"> 
+            <div id="noteText" class="noteText">
+              <input id="noteSlidebar" type="range" min="0" max="127" value="57" step="1"/> 57(= A4)
+            </div>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlaySample">PLAY SAMPLE</button>
+            <button class="mui-btn mui-btn--small mui-btn--accent mui-btn--raised" disabled id="btStopSample">STOP</button>
+          </div>
+          
+          <div class="operationTitleText"> 
+            2-2. Select/drag & drop a MIDI audio file.
+          </div>
+          <div class="operationContent"> 
+            <input type="file" accept="audio/mid" class="dropify" id="fileSelector" data-height="100" />  
+            <div class="associatedButton">
+              <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlaySound">PLAY</button>
+              <button class="mui-btn mui-btn--small mui-btn--accent mui-btn--raised" disabled id="btStopSound">STOP</button>
+            </div>
+          </div>
+        </div>
+      </td>
+
+      <!-- Right region: Appendix -->
+      <td>
+        <div id="tableRight" class="tableRight"> 
+          <div class="operationTitleText"> 
+            Appendix.
+          </div>
+          <div class="operationContent"> 
+            <!-- Copy code region -->
+            <pre id="output" class="prettyprint lang-js"></pre>
+            <div class="associatedButton">
+              <button class="mui-btn mui-btn--small" disabled id="copyCode">Copy code</button>
+              <div class="mui--text-accent" id="copiedText" style='visibility:hidden;'>COPIED!</div>
+            </div>
+
+            <!-- Link to readme -->
+            <div class="linkButton">
+              <button class="mui-btn mui-btn--small mui-btn--raised" id="btShowOperation">
+                Show README <i class="fas fa-external-link-alt"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr></table>
+    
+    <!-- Copywrite -->
+    <div id="copyWriteText" class="copyWriteText"> 
+      <a href="https://github.com/tetunori/toioCoreCubeSoundChecker" target="_blank">Hosted on GitHub</a>. Version 0.5.0. Copyright (c) 2020 Tetsunori NAKAYAMA. MIT License.
+    </div>  
+
+    <!-- Script -->
+    <script type="text/javascript" src="index.js"></script>
+  </body>
+</html>
