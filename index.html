@@ -52,14 +52,12 @@
           </div>
 
           <div class="operationTitleText"> 
-            2-1. Test a single note.
+            2-1. Test a single note. (←/→ keys also available)
           </div>
           <div class="operationContent"> 
-            <div id="noteText" class="noteText">
-              <input id="noteSlidebar" type="range" min="0" max="127" value="57" step="1"/> 57(= A4)
-            </div>
-            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlaySample">PLAY SAMPLE</button>
-            <button class="mui-btn mui-btn--small mui-btn--accent mui-btn--raised" disabled id="btStopSample">STOP</button>
+            <div id="noteText" class="noteText">57(= A4)</div>
+            <input id="noteSlider" type="range" min="0" max="127" value="57" step="1" /> 
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlayNote">PLAY NOTE</button>
           </div>
           
           <div class="operationTitleText"> 
@@ -79,19 +77,33 @@
       <td>
         <div id="tableRight" class="tableRight"> 
           <div class="operationTitleText"> 
-            Appendix.
+            Appendix A. Copy code.
           </div>
           <div class="operationContent"> 
             <!-- Copy code region -->
             <pre id="output" class="prettyprint lang-js"></pre>
             <div class="associatedButton">
               <button class="mui-btn mui-btn--small" disabled id="copyCode">Copy code</button>
-              <div class="mui--text-accent" id="copiedText" style='visibility:hidden;'>COPIED!</div>
+              <div class="mui--text-accent" id="copiedText" style='display:none;'>COPIED!</div>
             </div>
-
+          </div>
+          <div class="operationTitleText"> 
+            Appendix B. Sample sounds.
+          </div>
+          <div class="operationContent">
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btSE1">SE1</button>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btSE2">SE2</button>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btSE3">SE3</button>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btSE4">SE4</button>
+            <br>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlaySample">PLAY MUSIC1</button>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlaySample2">PLAY MUSIC2</button>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlaySample3">PLAY MUSIC3</button>
+            <button class="mui-btn mui-btn--small mui-btn--accent mui-btn--raised" disabled id="btStopSample">STOP</button>
+ 
             <!-- Link to readme -->
             <div class="linkButton">
-              <button class="mui-btn mui-btn--small mui-btn--raised" id="btShowOperation">
+              <button class="mui-btn mui-btn--small mui-btn--raised" id="btShowReadme">
                 Show README <i class="fas fa-external-link-alt"></i>
               </button>
             </div>

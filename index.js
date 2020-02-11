@@ -2,7 +2,7 @@
 var stringForToioJs = '\n' + 
     '/* Sound data converted from MIDI file */\n' + 
     '\n' + 'const melody = [\n';
-			stringForToioJs += '];' + '\n\n\n\n\n\n\n\n';
+			stringForToioJs += '];' + '\n\n';
 			document.getElementById("output").innerHTML = stringForToioJs;
 document.getElementById("output").innerHTML = stringForToioJs;
 document.getElementById("output").setAttribute("class", "prettyprint lang-js linenums");
@@ -62,6 +62,7 @@ const connectNewCube = () => {
         if( cube === gCubes[0] ){
             turnOnLightCian( cube );
             enablePlaySampleButton();
+            enablePlayNoteButton();
         }else{
             turnOnLightGreen( cube );
         }
@@ -92,6 +93,9 @@ const disablePlaySampleButton = () => { changeButtonStatus( "btPlaySample", fals
 const enablePlaySampleButton = () => { changeButtonStatus( "btPlaySample", true ); }
 const disableStopSampleButton = () => { changeButtonStatus( "btStopSample", false ); }
 const enableStopSampleButton = () => { changeButtonStatus( "btStopSample", true ); }
+const disablePlayNoteButton = () => { changeButtonStatus( "btPlayNote", false ); }
+const enablePlayNoteButton = () => { changeButtonStatus( "btPlayNote", true ); }
+
 
 // Cube Commands
 // -- Light Commands
@@ -171,6 +175,56 @@ const stopSound = () => {
 
 }
 
+// Play Note
+const playNote = () => {
+  const note = document.getElementById( 'noteSlider' ).value;
+  playSingleNote( gCubes[0], note, 30 );
+}
+
+const updateNoteText = () => {
+
+  const note = document.getElementById( 'noteSlider' ).value;
+  let text = '' + note + '(= ';
+
+  const keyChars = [ 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B' ];
+  text += keyChars[ note % 12 ];
+  text += Math.floor( note / 12 );
+  text += ')';
+
+  document.getElementById( 'noteText' ).innerText = text;
+
+}
+
+const minusNoteKey = () => {
+  document.getElementById( 'noteSlider' ).value--;
+  updateNoteText();
+  playNote();
+}
+
+const plusNoteKey = () => {
+  document.getElementById( 'noteSlider' ).value++;
+  updateNoteText();
+  playNote();
+}
+
+// Handle key events.
+window.addEventListener( 'keydown', ( event ) => { procKeyDown( event.keyCode ); });
+
+// Procedure on Key Down
+const procKeyDown = ( code ) => {
+
+  const KEYCODE_LEFT  =  37;
+  const KEYCODE_RIGHT =  39;
+
+  if( code === KEYCODE_LEFT ){
+      minusNoteKey();
+  }else if( code === KEYCODE_RIGHT ){
+      plusNoteKey();
+  }
+
+}
+
+
 // Sample Melody
 let isPlayingSampleMelody = false;
 let gPlaySampleMolodyTimerID = undefined;
@@ -230,6 +284,7 @@ const stopSampleMelody = () => {
         isPlayingSampleMelody = false;
         disableStopSampleButton();
         enablePlaySampleButton();
+        enablePlayNoteButton();
     }
 
 }
@@ -278,8 +333,20 @@ const initialize = () => {
         });
     }
 
+    document.getElementById( 'noteSlider' ).addEventListener( "change", async ev => {
+        playNote();
+    });
+    document.getElementById( 'noteSlider' ).addEventListener( "input", async ev => {
+        updateNoteText();
+    });
+
+    document.getElementById( "btPlayNote" ).addEventListener( "click", async ev => {
+        playNote();
+    });
+
     document.getElementById( "btPlaySample" ).addEventListener( "click", async ev => {
         disablePlaySampleButton();
+        disablePlayNoteButton();
         enableStopSampleButton();
         playSampleMelody();
     });
@@ -294,8 +361,8 @@ const initialize = () => {
     document.getElementById( "btStopSound" ).addEventListener( "click", async ev => {
     });
 
-    document.getElementById( "btShowOperation" ).addEventListener( "click", async ev => {
-        window.open('https://github.com/tetunori/toioCoreCubeGampadControl/blob/master/README.md','_blank');
+    document.getElementById( "btShowReadme" ).addEventListener( "click", async ev => {
+        window.open('https://github.com/tetunori/toioCoreCubeSoundChecker/blob/master/README.md','_blank');
     });
 
     updateStatus();
@@ -303,5 +370,3 @@ const initialize = () => {
 }
 
 initialize();
-
-
