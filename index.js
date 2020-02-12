@@ -8,8 +8,201 @@ document.getElementById("output").innerHTML = stringForToioJs;
 document.getElementById("output").setAttribute("class", "prettyprint lang-js linenums");
 PR.prettyPrint();
 
+
+
+
+// File Selector
+const fileSelector = document.getElementById( 'fileSelector' );
+// Set onChange event to file selector.
+fileSelector.onchange = () => {
+
+	const fileReader = new FileReader();
+	fileReader.onload = () => {
+
+    const parsedMidiData = parseMIDIData( fileReader.result );
+    console.log( parsedMidiData );
+    
+    if( isSupportedMidiData( parsedMidiData ) ){
+      const cubeSoundData = convertMIDIToCubeSound( parsedMidiData );
+      console.log( cubeSoundData );
+      const testbuf = cubeSoundData.slice(0, 50*3);
+      console.log( testbuf);
+      const buf = new Uint8Array( testbuf.length + 2 );
+      buf[0] = 0x01;
+      buf[1] = testbuf.length/3;
+      buf.set( testbuf, 2 );
+      playMelody( gCubes[0], buf );
+    }else{
+      console.log( 'Error. Unsupported file.' );
+    }
+    
+
+	}
+	fileReader.readAsArrayBuffer( fileSelector.files[0] );
+
+}
+
 // execute dropify.
 $('.dropify').dropify();
+
+const parseMIDIData = ( midi_data ) => { return new Midi( midi_data ); }
+
+// Judge the specified MIDI file is supported format or not.
+// data : [Input] target MIDI data
+const isSupportedMidiData = ( data ) => {
+
+	let retVal = true;
+	
+  /* Later change...
+	// Time division format : FPS is not supported.
+	if( data.header.getTimeDivision() === MIDIFile.Header.FRAMES_PER_SECONDS ){
+		console.log( 'Error. Time Diviesion : Frames/Sec is unsupported.' );
+		retVal = false;
+	}
+  */
+
+	return retVal;
+
+}
+
+const convertMIDIToCubeSound = ( midi ) => {
+
+  const melodyArray = [];
+
+  midi.tracks.forEach( track => {
+
+    const notes = track.notes
+    notes.forEach( note => {
+      // note.midi, note.time, note.duration, note.name
+      inputNoteData( note.duration, note.midi, note.velocity, melodyArray );
+    });
+
+  });
+
+  const retMelodyBuf = new Uint8Array( melodyArray );
+  return retMelodyBuf;
+
+}
+
+
+/*
+// Convert MIDI data to sound data for toio Core Cube. 
+// data : [Input] target MIDI data
+function convertFromMidiData( data ){
+
+	var retMelody = [];						// Melody array for return value.
+	var trackCounter = 0; 
+	var absTimeTickMilliSec = 0;  // usec. Follow the illustration below.
+
+	// Search tracks
+	for( trackCounter = 0; trackCounter < data.tracks.length; trackCounter++ ){
+		var trackEventsChunk = data.tracks[trackCounter].getTrackContent();
+		var events = MIDIEvents.createParser( trackEventsChunk );
+		var event;
+		var currentNote = -1;
+		var currentVelocity = -1;
+		var isFoundNoteOnEvent = false;
+
+		while( event = events.next() ) {
+			// console.log( 'Track #' + trackCounter + '/event' );
+			if( event.type === MIDIEvents.EVENT_MIDI ){
+				switch( event.subtype ){
+					case MIDIEvents.EVENT_MIDI_NOTE_OFF:
+						// event.param1 is note number.
+						if( currentNote === event.param1 ){
+							// console.log( 'deltaTime is ' + event.delta );
+							var duration = event.delta * absTimeTickMilliSec;
+							if( duration === 0 ){
+								console.log( '[WARNING] duration is 0. Skip <Track #' + trackCounter + ', Event #' + event.index + '>' );
+							}else{
+								inputNoteData( duration, currentNote, currentVelocity, retMelody );
+							}
+							currentNote = -1;
+							currentVelocity = -1;
+						}
+						break;
+					case MIDIEvents.EVENT_MIDI_NOTE_ON:
+						// event.param1 is note number.
+						// event.param2 is velocity.
+						// console.log( 'event.param1 is ' + event.param1 );
+						// console.log( 'event.param2 is ' + event.param2 );
+						if( currentNote !== -1 ){
+							// console.log( 'deltaTime is ' + event.delta );
+							var duration = event.delta * absTimeTickMilliSec;
+							if( duration === 0 ){
+								console.log( '[WARNING] duration is 0. Skip <Track #' + trackCounter + ', Event #' + event.index + '>' );
+							}else{
+								inputNoteData( duration, currentNote, currentVelocity, retMelody );
+							}
+						}else{
+							// console.log( 'deltaTime is ' + event.delta );
+							var duration = event.delta * absTimeTickMilliSec;
+							if( duration === 0 ){
+								console.log( '[WARNING] duration is 0. Skip <Track #' + trackCounter + ', Event #' + event.index + '>' );
+							}else{
+								inputNoteData( duration, 0xFF, 0, retMelody );
+							}
+						}
+
+						isFoundNoteOnEvent = true;
+						currentNote = event.param1;
+						currentVelocity = event.param2;
+						break;
+				}
+			}else if( event.type === MIDIEvents.EVENT_META ){
+				switch( event.subtype ){
+					case MIDIEvents.EVENT_META_SET_TEMPO:
+						// event.tempo : usec value for 1 beat.
+						// 1 / data.header.getTicksPerBeat() : beat value for 1 tick.
+						// So absTimeTickMilliSec is usec value for 1 tick.
+						absTimeTickMilliSec = event.tempo / data.header.getTicksPerBeat() / 1000;
+						console.log( 'absTimeTickMilliSec is ' + absTimeTickMilliSec );
+						break;
+				}
+			}
+
+			// Check length MAX.
+			if( retMelody.length >= MELODY_LENGTH_MAX ){
+				console.log( '[WARNING] Melody length MAX is : ' + MELODY_LENGTH_MAX +'.' );
+				break;
+			}
+
+		}
+
+		// Check whether NoteOn event found(it means we should have achieved melody.).
+		if( isFoundNoteOnEvent === true ){
+			// console.log( 'EVENT_MIDI_NOTE_ON found in track[' + trackCounter +'].' );
+			break;
+		}
+
+	}
+
+	// console.log( 'Melody is ' + JSON.stringify( retMelody ) );
+	return retMelody;
+}
+
+*/
+// Input converted Note data to the target array.
+// duration : [Input]  Duration(sec) of the note
+// note 		: [Input]  Note data
+// velocity : [Input]  Velocity of note in the MIDI data.
+// 										 we need handle Velocity:0 as note off. Others are as 'on' 
+// target 	: [Output] A note is pushed into this array.
+function inputNoteData( duration, note, velocity, target ){
+  
+  const NOTE_OFF_NUMBER = 128;
+
+	if( velocity > 0 ){
+		target.push( Math.round( duration * 100 ) );
+		target.push( note );
+	}else{
+		// velocity === 0.
+    target.push( Math.round( duration * 100 ) );
+		target.push( NOTE_OFF_NUMBER );
+	}
+  target.push( 0xFF );
+
+}
 
 
 
@@ -223,6 +416,8 @@ const procKeyDown = ( code ) => {
   }
 
 }
+
+
 
 
 // Sample Melody

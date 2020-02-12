@@ -33,7 +33,7 @@ div.noteText {
 }
 
 table {
-    width: 1000px;
+    width: 909px;
 }
 
 td {
@@ -81,7 +81,8 @@ div.copyWriteText {
 }
 
 .linkButton {
-    text-align: center;
+  margin-top: 28px;
+  text-align: right;
 }
 
 /* On dropify */
