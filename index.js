@@ -12,6 +12,8 @@ PR.prettyPrint();
 
 
 // File Selector
+let melodyBuf = undefined;
+let melodyBufOriginal = undefined;
 const fileSelector = document.getElementById( 'fileSelector' );
 // Set onChange event to file selector.
 fileSelector.onchange = () => {
@@ -19,25 +21,21 @@ fileSelector.onchange = () => {
 	const fileReader = new FileReader();
 	fileReader.onload = () => {
 
+    disablePlayMIDIButton();
     const parsedMidiData = parseMIDIData( fileReader.result );
     console.log( parsedMidiData );
     
     if( isSupportedMidiData( parsedMidiData ) ){
-      const cubeSoundData = convertMIDIToCubeSound( parsedMidiData );
-      console.log( cubeSoundData );
-      const testbuf = cubeSoundData.slice(0, 50*3);
-      console.log( testbuf);
-      const buf = new Uint8Array( testbuf.length + 2 );
-      buf[0] = 0x01;
-      buf[1] = testbuf.length/3;
-      buf.set( testbuf, 2 );
-      playMelody( gCubes[0], buf );
+      melodyBufOriginal = convertMIDIToCubeSound( parsedMidiData );
+      // console.log( melodyBufOriginal );
+      melodyBuf = new Uint8Array( melodyBufOriginal );
+      enableMIDIButton();
     }else{
       console.log( 'Error. Unsupported file.' );
     }
-    
 
 	}
+  
 	fileReader.readAsArrayBuffer( fileSelector.files[0] );
 
 }
@@ -68,13 +66,23 @@ const isSupportedMidiData = ( data ) => {
 const convertMIDIToCubeSound = ( midi ) => {
 
   const melodyArray = [];
+  const NOTE_OFF_NUMBER = 128;
 
   midi.tracks.forEach( track => {
 
     const notes = track.notes
-    notes.forEach( note => {
-      // note.midi, note.time, note.duration, note.name
-      inputNoteData( note.duration, note.midi, note.velocity, melodyArray );
+    notes.forEach( ( note, index ) => {
+      let deltaTime = 0; 
+      if( index > 0 ){
+        deltaTime = note.time - ( notes[ index - 1 ].duration + notes[ index - 1 ].time );
+      }
+
+      if( deltaTime > 0.01 ){
+        inputNoteData( deltaTime, NOTE_OFF_NUMBER, note.velocity, melodyArray );
+        inputNoteData( note.duration, note.midi, note.velocity, melodyArray );
+      }else{
+        inputNoteData( note.duration, note.midi, note.velocity, melodyArray );
+      }
     });
 
   });
@@ -84,102 +92,28 @@ const convertMIDIToCubeSound = ( midi ) => {
 
 }
 
+const getDurationOfMelody = ( melody ) => {
 
-/*
-// Convert MIDI data to sound data for toio Core Cube. 
-// data : [Input] target MIDI data
-function convertFromMidiData( data ){
+  let retVal = 0;
 
-	var retMelody = [];						// Melody array for return value.
-	var trackCounter = 0; 
-	var absTimeTickMilliSec = 0;  // usec. Follow the illustration below.
+  const numOps = melody.length / 3;
+  for( let index = 0; index < numOps; index++ ){
+    retVal += melody[ index * 3 ] * 10;
+  }
 
-	// Search tracks
-	for( trackCounter = 0; trackCounter < data.tracks.length; trackCounter++ ){
-		var trackEventsChunk = data.tracks[trackCounter].getTrackContent();
-		var events = MIDIEvents.createParser( trackEventsChunk );
-		var event;
-		var currentNote = -1;
-		var currentVelocity = -1;
-		var isFoundNoteOnEvent = false;
+  // console.log( retVal );
+  return retVal;
 
-		while( event = events.next() ) {
-			// console.log( 'Track #' + trackCounter + '/event' );
-			if( event.type === MIDIEvents.EVENT_MIDI ){
-				switch( event.subtype ){
-					case MIDIEvents.EVENT_MIDI_NOTE_OFF:
-						// event.param1 is note number.
-						if( currentNote === event.param1 ){
-							// console.log( 'deltaTime is ' + event.delta );
-							var duration = event.delta * absTimeTickMilliSec;
-							if( duration === 0 ){
-								console.log( '[WARNING] duration is 0. Skip <Track #' + trackCounter + ', Event #' + event.index + '>' );
-							}else{
-								inputNoteData( duration, currentNote, currentVelocity, retMelody );
-							}
-							currentNote = -1;
-							currentVelocity = -1;
-						}
-						break;
-					case MIDIEvents.EVENT_MIDI_NOTE_ON:
-						// event.param1 is note number.
-						// event.param2 is velocity.
-						// console.log( 'event.param1 is ' + event.param1 );
-						// console.log( 'event.param2 is ' + event.param2 );
-						if( currentNote !== -1 ){
-							// console.log( 'deltaTime is ' + event.delta );
-							var duration = event.delta * absTimeTickMilliSec;
-							if( duration === 0 ){
-								console.log( '[WARNING] duration is 0. Skip <Track #' + trackCounter + ', Event #' + event.index + '>' );
-							}else{
-								inputNoteData( duration, currentNote, currentVelocity, retMelody );
-							}
-						}else{
-							// console.log( 'deltaTime is ' + event.delta );
-							var duration = event.delta * absTimeTickMilliSec;
-							if( duration === 0 ){
-								console.log( '[WARNING] duration is 0. Skip <Track #' + trackCounter + ', Event #' + event.index + '>' );
-							}else{
-								inputNoteData( duration, 0xFF, 0, retMelody );
-							}
-						}
-
-						isFoundNoteOnEvent = true;
-						currentNote = event.param1;
-						currentVelocity = event.param2;
-						break;
-				}
-			}else if( event.type === MIDIEvents.EVENT_META ){
-				switch( event.subtype ){
-					case MIDIEvents.EVENT_META_SET_TEMPO:
-						// event.tempo : usec value for 1 beat.
-						// 1 / data.header.getTicksPerBeat() : beat value for 1 tick.
-						// So absTimeTickMilliSec is usec value for 1 tick.
-						absTimeTickMilliSec = event.tempo / data.header.getTicksPerBeat() / 1000;
-						console.log( 'absTimeTickMilliSec is ' + absTimeTickMilliSec );
-						break;
-				}
-			}
-
-			// Check length MAX.
-			if( retMelody.length >= MELODY_LENGTH_MAX ){
-				console.log( '[WARNING] Melody length MAX is : ' + MELODY_LENGTH_MAX +'.' );
-				break;
-			}
-
-		}
-
-		// Check whether NoteOn event found(it means we should have achieved melody.).
-		if( isFoundNoteOnEvent === true ){
-			// console.log( 'EVENT_MIDI_NOTE_ON found in track[' + trackCounter +'].' );
-			break;
-		}
-
-	}
-
-	// console.log( 'Melody is ' + JSON.stringify( retMelody ) );
-	return retMelody;
 }
+
+
+const enableMIDIButton = () => {
+  if( gCubes[0] && gCubes[0].soundChar && melodyBuf ){
+    enablePlayMIDIButton();    
+  }
+}
+
+
 
 */
 // Input converted Note data to the target array.
@@ -209,7 +143,7 @@ function inputNoteData( duration, note, velocity, target ){
 // Global Constants
 const gCubes = [ undefined, undefined ];
 
-const MAX_CUBE_SOUND_NUM = 59;
+const MAX_SOUND_OPERATION_NUM = 59;
 
 // Cube Connection
 const SERVICE_UUID              = '10b20100-5b3b-4571-9508-cf3efcd7bbae';
@@ -256,6 +190,7 @@ const connectNewCube = () => {
             turnOnLightCian( cube );
             enablePlaySampleButton();
             enablePlayNoteButton();
+            enableMIDIButton();
         }else{
             turnOnLightGreen( cube );
         }
@@ -288,6 +223,10 @@ const disableStopSampleButton = () => { changeButtonStatus( "btStopSample", fals
 const enableStopSampleButton = () => { changeButtonStatus( "btStopSample", true ); }
 const disablePlayNoteButton = () => { changeButtonStatus( "btPlayNote", false ); }
 const enablePlayNoteButton = () => { changeButtonStatus( "btPlayNote", true ); }
+const disablePlayMIDIButton = () => { changeButtonStatus( "btPlayMIDI", false ); }
+const enablePlayMIDIButton = () => { changeButtonStatus( "btPlayMIDI", true ); }
+const disableStopMIDIButton = () => { changeButtonStatus( "btStopMIDI", false ); }
+const enableStopMIDIButton = () => { changeButtonStatus( "btStopMIDI", true ); }
 
 
 // Cube Commands
@@ -418,6 +357,92 @@ const procKeyDown = ( code ) => {
 }
 
 
+// MIDI Melody
+let isPlayingMIDIMelody = false;
+let gPlayMIDIMolodyTimerID = undefined;
+
+const playMIDIMelody = () => {
+
+  isPlayingMIDIMelody = true;
+  disablePlayMIDIButton();
+  enableStopMIDIButton();
+  disablePlaySampleButton();
+  disablePlayNoteButton();
+
+  melodyBuf = new Uint8Array( melodyBufOriginal );
+
+  playMIDIMelodyCore();
+
+}
+
+const playMIDIMelodyCore = () => {
+
+  let duration;
+  if( melodyBuf.length > MAX_SOUND_OPERATION_NUM * 3 ){
+
+    const buf = new Uint8Array( MAX_SOUND_OPERATION_NUM * 3 + 2 );
+
+    buf[0] = 0x01;
+    buf[1] = MAX_SOUND_OPERATION_NUM;
+    buf.set( melodyBuf.slice( 0, MAX_SOUND_OPERATION_NUM * 3 - 1 ), 2 );
+    playMelody( gCubes[0], buf );
+    duration = getDurationOfMelody( melodyBuf.slice( 0, MAX_SOUND_OPERATION_NUM * 3 - 1 ) );
+    melodyBuf = melodyBuf.slice( MAX_SOUND_OPERATION_NUM * 3, melodyBuf.length );
+
+  }else{
+
+    const buf = new Uint8Array( melodyBuf.length + 2 );
+
+    buf[0] = 0x01;
+    buf[1] = melodyBuf.length / 3;
+    buf.set( melodyBuf, 2 );
+    playMelody( gCubes[0], buf );
+    duration = getDurationOfMelody( melodyBuf );
+    melodyBuf = undefined;
+  }
+  gPlayMIDIMolodyTimerID = setTimeout( onNextMIDIMelody, duration );
+
+}
+
+const onNextMIDIMelody = () => {
+  if( melodyBuf === undefined ){
+    endPlayMIDIMelody();
+  }else{
+    playMIDIMelodyCore();
+  }
+}
+
+const endPlayMIDIMelody = () => {
+  if( isPlayingMIDIMelody ){
+      isPlayingMIDIMelody = false;
+      disableStopMIDIButton();
+      enablePlayMIDIButton();
+      enablePlaySampleButton();
+      enablePlayNoteButton();
+  }
+}
+
+const stopMIDIMelody = () => {
+
+    // Clear TimerID
+    if( gPlayMIDIMolodyTimerID !== undefined ){
+        clearTimeout( gPlayMIDIMolodyTimerID );
+        gPlayMIDIMolodyTimerID = undefined;
+    }
+
+    if( gCubes[0] ){ stopSound( gCubes[0] ); }
+    if( gCubes[1] ){ stopSound( gCubes[1] ); }
+
+    if( isPlayingMIDIMelody ){
+        isPlayingMIDIMelody = false;
+        disableStopMIDIButton();
+        enablePlayMIDIButton();
+        enablePlayNoteButton();
+        enablePlaySampleButton();
+    }
+
+}
+
 
 
 // Sample Melody
@@ -437,7 +462,7 @@ const playSampleMelodyDown = () => { playSampleMelodyCore( false ); }
 const playSampleMelodyCore = ( isUp ) => {
     
     const REPEAT_COUNT = 0x01;
-    const NUM_OPERATION = MAX_CUBE_SOUND_NUM;
+    const NUM_OPERATION = MAX_SOUND_OPERATION_NUM;
     const DURATION = 0x05;
     const LONG_DURATION = 0x64;
     const BASE_NOTE = 0x1F;
@@ -480,6 +505,7 @@ const stopSampleMelody = () => {
         disableStopSampleButton();
         enablePlaySampleButton();
         enablePlayNoteButton();
+        enablePlayMIDIButton();
     }
 
 }
@@ -542,6 +568,7 @@ const initialize = () => {
     document.getElementById( "btPlaySample" ).addEventListener( "click", async ev => {
         disablePlaySampleButton();
         disablePlayNoteButton();
+        disablePlayMIDIButton();
         enableStopSampleButton();
         playSampleMelody();
     });
@@ -550,10 +577,12 @@ const initialize = () => {
         stopSampleMelody();
     });
 
-    document.getElementById( "btPlaySound" ).addEventListener( "click", async ev => {
+    document.getElementById( "btPlayMIDI" ).addEventListener( "click", async ev => {
+      playMIDIMelody();
     });
 
-    document.getElementById( "btStopSound" ).addEventListener( "click", async ev => {
+    document.getElementById( "btStopMIDI" ).addEventListener( "click", async ev => {
+      stopMIDIMelody();
     });
 
     document.getElementById( "btShowReadme" ).addEventListener( "click", async ev => {
