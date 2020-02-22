@@ -76,7 +76,7 @@ const convertMIDIToCubeSound = ( midi ) => {
       if( index > 0 ){
         if( note.time === notes[ index - 1 ].time ){
           // Skip for multiple attack
-          //return; // continue forEach.
+          return; // continue forEach.
         }
 
         restTime = note.time - ( notes[ index - 1 ].duration + notes[ index - 1 ].time );
@@ -134,7 +134,7 @@ const inputNoteData = ( duration, note, velocity, target ) => {
   const MAX_NOTE_DURATION = 2.50;
   let leftDuration = duration;
 
-  console.log( duration );
+  // console.log( duration );
 
   while( MAX_NOTE_DURATION < leftDuration ){    
     
@@ -478,6 +478,7 @@ const stopMIDIMelody = () => {
         disableStopMIDIButton();
         enablePlayMIDIButton();
         enablePlayNoteButton();
+        enablePlayPreInSEButton();
         enablePlaySampleButton();
     }
 
@@ -616,7 +617,7 @@ const initialize = () => {
     document.getElementById( "btPlaySample" ).addEventListener( "click", async ev => {
         disablePlaySampleButton();
         disablePlayNoteButton();
-        diasblePlayPreInSEButton();
+        disablePlayPreInSEButton();
         disablePlayMIDIButton();
         enableStopSampleButton();
         playSampleMelody();
@@ -643,10 +644,4 @@ const initialize = () => {
 }
 
 initialize();
-
-
-
-
-
-
 
