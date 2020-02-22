@@ -85,6 +85,17 @@ div.copyWriteText {
   text-align: right;
 }
 
+#MIDITrackDropDown {
+  margin-bottom: 5px;
+  margin-top: 10px;
+  text-align: right;
+}
+
+#preInSE {
+  margin-top: 10px;
+  margin-right: 10px;
+}
+
 /* On dropify */
 div.dropify-wrapper {
     margin-top: 8px;

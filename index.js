@@ -1,5 +1,5 @@
 
-var stringForToioJs = '\n' + 
+let stringForToioJs = '\n' + 
     '/* Sound data converted from MIDI file */\n' + 
     '\n' + 'const melody = [\n';
 			stringForToioJs += '];' + '\n\n';
@@ -72,13 +72,19 @@ const convertMIDIToCubeSound = ( midi ) => {
 
     const notes = track.notes
     notes.forEach( ( note, index ) => {
-      let deltaTime = 0; 
+      let restTime = 0; 
       if( index > 0 ){
-        deltaTime = note.time - ( notes[ index - 1 ].duration + notes[ index - 1 ].time );
+        if( note.time === notes[ index - 1 ].time ){
+          // Skip for multiple attack
+          //return; // continue forEach.
+        }
+
+        restTime = note.time - ( notes[ index - 1 ].duration + notes[ index - 1 ].time );
+
       }
 
-      if( deltaTime > 0.01 ){
-        inputNoteData( deltaTime, NOTE_OFF_NUMBER, note.velocity, melodyArray );
+      if( restTime > 0.01 ){
+        inputNoteData( restTime, NOTE_OFF_NUMBER, note.velocity, melodyArray );
         inputNoteData( note.duration, note.midi, note.velocity, melodyArray );
       }else{
         inputNoteData( note.duration, note.midi, note.velocity, melodyArray );
@@ -88,6 +94,7 @@ const convertMIDIToCubeSound = ( midi ) => {
   });
 
   const retMelodyBuf = new Uint8Array( melodyArray );
+  console.log( retMelodyBuf );
   return retMelodyBuf;
 
 }
@@ -115,14 +122,32 @@ const enableMIDIButton = () => {
 
 
 
-*/
+
 // Input converted Note data to the target array.
 // duration : [Input]  Duration(sec) of the note
 // note 		: [Input]  Note data
 // velocity : [Input]  Velocity of note in the MIDI data.
 // 										 we need handle Velocity:0 as note off. Others are as 'on' 
 // target 	: [Output] A note is pushed into this array.
-function inputNoteData( duration, note, velocity, target ){
+const inputNoteData = ( duration, note, velocity, target ) => {
+  
+  const MAX_NOTE_DURATION = 2.50;
+  let leftDuration = duration;
+
+  console.log( duration );
+
+  while( MAX_NOTE_DURATION < leftDuration ){    
+    
+    inputSingleNoteData( MAX_NOTE_DURATION, note, velocity, target );
+    leftDuration -= MAX_NOTE_DURATION;
+
+  }
+
+  inputSingleNoteData( leftDuration, note, velocity, target );
+
+}
+
+const inputSingleNoteData = ( duration, note, velocity, target ) => {
   
   const NOTE_OFF_NUMBER = 128;
 
@@ -190,6 +215,7 @@ const connectNewCube = () => {
             turnOnLightCian( cube );
             enablePlaySampleButton();
             enablePlayNoteButton();
+            enablePlayPreInSEButton();
             enableMIDIButton();
         }else{
             turnOnLightGreen( cube );
@@ -223,6 +249,8 @@ const disableStopSampleButton = () => { changeButtonStatus( "btStopSample", fals
 const enableStopSampleButton = () => { changeButtonStatus( "btStopSample", true ); }
 const disablePlayNoteButton = () => { changeButtonStatus( "btPlayNote", false ); }
 const enablePlayNoteButton = () => { changeButtonStatus( "btPlayNote", true ); }
+const disablePlayPreInSEButton = () => { changeButtonStatus( "btPlayPreInSE", false ); }
+const enablePlayPreInSEButton = () => { changeButtonStatus( "btPlayPreInSE", true ); }
 const disablePlayMIDIButton = () => { changeButtonStatus( "btPlayMIDI", false ); }
 const enablePlayMIDIButton = () => { changeButtonStatus( "btPlayMIDI", true ); }
 const disableStopMIDIButton = () => { changeButtonStatus( "btStopMIDI", false ); }
@@ -356,6 +384,11 @@ const procKeyDown = ( code ) => {
 
 }
 
+// Pre-installed SE
+const playPreInSE = () => {
+  const idSE = document.getElementById( 'preInSE' ).value;
+  playSE( gCubes[0], idSE );
+}
 
 // MIDI Melody
 let isPlayingMIDIMelody = false;
@@ -368,6 +401,7 @@ const playMIDIMelody = () => {
   enableStopMIDIButton();
   disablePlaySampleButton();
   disablePlayNoteButton();
+  disablePlayPreInSEButton();
 
   melodyBuf = new Uint8Array( melodyBufOriginal );
 
@@ -377,6 +411,10 @@ const playMIDIMelody = () => {
 
 const playMIDIMelodyCore = () => {
 
+  if( isPlayingMIDIMelody === false ){
+    return;
+  }
+
   let duration;
   if( melodyBuf.length > MAX_SOUND_OPERATION_NUM * 3 ){
 
@@ -384,9 +422,10 @@ const playMIDIMelodyCore = () => {
 
     buf[0] = 0x01;
     buf[1] = MAX_SOUND_OPERATION_NUM;
-    buf.set( melodyBuf.slice( 0, MAX_SOUND_OPERATION_NUM * 3 - 1 ), 2 );
+    buf.set( melodyBuf.slice( 0, MAX_SOUND_OPERATION_NUM * 3 ), 2 );
+    console.log( "a: " + buf );
     playMelody( gCubes[0], buf );
-    duration = getDurationOfMelody( melodyBuf.slice( 0, MAX_SOUND_OPERATION_NUM * 3 - 1 ) );
+    duration = getDurationOfMelody( melodyBuf.slice( 0, MAX_SOUND_OPERATION_NUM * 3 ) );
     melodyBuf = melodyBuf.slice( MAX_SOUND_OPERATION_NUM * 3, melodyBuf.length );
 
   }else{
@@ -419,6 +458,7 @@ const endPlayMIDIMelody = () => {
       enablePlayMIDIButton();
       enablePlaySampleButton();
       enablePlayNoteButton();
+      enablePlayPreInSEButton();
   }
 }
 
@@ -505,6 +545,7 @@ const stopSampleMelody = () => {
         disableStopSampleButton();
         enablePlaySampleButton();
         enablePlayNoteButton();
+        enablePlayPreInSEButton();
         enablePlayMIDIButton();
     }
 
@@ -564,10 +605,18 @@ const initialize = () => {
     document.getElementById( "btPlayNote" ).addEventListener( "click", async ev => {
         playNote();
     });
+    
+    document.getElementById( 'preInSE' ).addEventListener( "change", async ev => {
+        playPreInSE();
+    });
+    document.getElementById( "btPlayPreInSE" ).addEventListener( "click", async ev => {
+        playPreInSE();
+    });
 
     document.getElementById( "btPlaySample" ).addEventListener( "click", async ev => {
         disablePlaySampleButton();
         disablePlayNoteButton();
+        diasblePlayPreInSEButton();
         disablePlayMIDIButton();
         enableStopSampleButton();
         playSampleMelody();
@@ -594,3 +643,10 @@ const initialize = () => {
 }
 
 initialize();
+
+
+
+
+
+
+

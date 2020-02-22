@@ -63,12 +63,40 @@
             <input id="noteSlider" type="range" min="0" max="127" value="57" step="1" /> 
             <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlayNote">PLAY NOTE</button>
           </div>
+
+          <div class="operationTitleText"> 
+            2-2. Pre-installed Sound Effect.
+          </div>
+          <div class="operationContent"> 
+            <select id="preInSE">
+              <option value="0">Enter</option>
+              <option value="1">Selected</option>
+              <option value="2">Cancel</option>
+              <option value="3">Cursor</option>
+              <option value="4">Mat in</option>
+              <option value="5">Mat out</option>
+              <option value="6">Get 1</option>
+              <option value="7">Get 2</option>
+              <option value="8">Get 3</option>
+              <option value="9">Effect 1</option>
+              <option value="10">Effect 2</option>
+            </select>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlayPreInSE">PLAY SE</button>
+          </div>
           
           <div class="operationTitleText"> 
-            2-2. Select/drag & drop a MIDI audio file.
+            2-3. Select/drag & drop a MIDI audio file.
           </div>
           <div class="operationContent"> 
             <input type="file" accept="audio/mid" class="dropify" id="fileSelector" data-height="100" />  
+            <div id="MIDITrackDropDown"> 
+              Cube 1: <select id="MIDITrackCube1">
+                <option value="track1">Track 1</option>
+              </select>
+              , Cube 2: <select id="MIDITrackCube2">
+                <option value="track2">Track 2</option>
+              </select>
+            </div>
             <div class="associatedButton">
               <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlayMIDI">PLAY</button>
               <button class="mui-btn mui-btn--small mui-btn--accent mui-btn--raised" disabled id="btStopMIDI">STOP</button>
