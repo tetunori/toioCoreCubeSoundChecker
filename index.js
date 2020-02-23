@@ -13,7 +13,7 @@ PR.prettyPrint();
 
 // File Selector
 let melodyBuf = undefined;
-let melodyBufOriginal = undefined;
+let melodyTracksOriginal = undefined;
 const fileSelector = document.getElementById( 'fileSelector' );
 // Set onChange event to file selector.
 fileSelector.onchange = () => {
@@ -28,8 +28,8 @@ fileSelector.onchange = () => {
     updateTrackSelector( parsedMidiData );
     
     if( isSupportedMidiData( parsedMidiData ) ){
-      melodyBufOriginal = convertMIDIToCubeSound( parsedMidiData );
-      // console.log( melodyBufOriginal );
+      melodyTracksOriginal = convertMIDIToCubeSound( parsedMidiData );
+      // console.log( melodyTracksOriginal );
       enableMIDIButton();
     }else{
       console.log( 'Error. Unsupported file.' );
@@ -110,11 +110,12 @@ const updateTrackSelector = ( midi ) => {
 
 const convertMIDIToCubeSound = ( midi ) => {
 
-  const melodyArray = [];
+  const trackArray = new Array( midi.tracks.length );
   const NOTE_OFF_NUMBER = 128;
 
-  midi.tracks.forEach( track => {
+  midi.tracks.forEach( ( track, trackId ) => {
 
+    const melodyArray = [];
     const notes = track.notes
     notes.forEach( ( note, index ) => {
       let restTime = 0; 
@@ -135,12 +136,19 @@ const convertMIDIToCubeSound = ( midi ) => {
         inputNoteData( note.duration, note.midi, note.velocity, melodyArray );
       }
     });
+    trackArray[ trackId ] = melodyArray;
 
   });
 
-  const retMelodyBuf = new Uint8Array( melodyArray );
-  console.log( retMelodyBuf );
-  return retMelodyBuf;
+  console.log( trackArray );
+  return trackArray;
+
+}
+
+const getTrackId = ( cubeId ) => {
+
+  const select = document.getElementById( 'MIDITrackCube' + cubeId );
+  return select.selectedIndex;
 
 }
 
@@ -160,7 +168,7 @@ const getDurationOfMelody = ( melody ) => {
 
 
 const enableMIDIButton = () => {
-  if( gCubes[0] && gCubes[0].soundChar && melodyBufOriginal ){
+  if( gCubes[0] && gCubes[0].soundChar && melodyTracksOriginal ){
     enablePlayMIDIButton();    
   }
 }
@@ -448,7 +456,7 @@ const playMIDIMelody = () => {
   disablePlayNoteButton();
   disablePlayPreInSEButton();
 
-  melodyBuf = new Uint8Array( melodyBufOriginal );
+  melodyBuf = new Uint8Array( melodyTracksOriginal[ getTrackId( 1 ) ] );
 
   playMIDIMelodyCore();
 
