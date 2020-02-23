@@ -1,4 +1,6 @@
 
+const SUPPORT_CUBE_NUM = 2;
+
 let stringForToioJs = '\n' + 
     '/* Sound data converted from MIDI file */\n' + 
     '\n' + 'const melody = [\n';
@@ -12,7 +14,7 @@ PR.prettyPrint();
 
 
 // File Selector
-let melodyBuf = undefined;
+let melodyBuf = new Array( SUPPORT_CUBE_NUM );
 let melodyTracksOriginal = undefined;
 const fileSelector = document.getElementById( 'fileSelector' );
 // Set onChange event to file selector.
@@ -24,12 +26,11 @@ fileSelector.onchange = () => {
     disablePlayMIDIButton();
     const parsedMidiData = parseMIDIData( fileReader.result );
     console.log( parsedMidiData );
-
-    updateTrackSelector( parsedMidiData );
     
     if( isSupportedMidiData( parsedMidiData ) ){
       melodyTracksOriginal = convertMIDIToCubeSound( parsedMidiData );
       // console.log( melodyTracksOriginal );
+      updateTrackSelector( melodyTracksOriginal );
       enableMIDIButton();
     }else{
       console.log( 'Error. Unsupported file.' );
@@ -64,7 +65,7 @@ const isSupportedMidiData = ( data ) => {
 
 }
 
-const updateTrackSelector = ( midi ) => {
+const updateTrackSelector = ( tracks ) => {
 
   for( let cubeId of [ 1, 2 ] ){
 
@@ -78,11 +79,14 @@ const updateTrackSelector = ( midi ) => {
     }
 
     // Append selector items
-    for( let trackId = 0; trackId < midi.tracks.length; trackId++ ){
+    for( let trackId = 0; trackId < tracks.length; trackId++ ){
       
       const option = document.createElement( 'option' );
       option.value = '' + ( trackId + 1 );
       option.text = 'Track ' + ( trackId + 1 );
+      if( tracks[ trackId ].length === 0 ){
+        option.disabled = true;
+      }
       select.appendChild( option );
 
     }
@@ -91,9 +95,9 @@ const updateTrackSelector = ( midi ) => {
   
   // Set appropriate item 
   let count = 1;
-  for( let trackId = 0; trackId < midi.tracks.length; trackId++ ){
+  for( let trackId = 0; trackId < tracks.length; trackId++ ){
     
-    if( 1 ){
+    if( tracks[ trackId ].length > 0 ){
 
       const select = document.getElementById( 'MIDITrackCube' + count );
       select.selectedIndex = trackId;
@@ -374,15 +378,15 @@ const playMelody = ( cube, melody ) => {
 
 }
 
-const stopSound = () => {
+const stopSound = ( cubeID ) => {
 
     // Stop sound
     const buf = new Uint8Array([ 0x01 ]);
-    const cube = gCubes[0];
+    const cube = gCubes[ cubeID ];
     if( ( cube !== undefined ) && ( cube.soundChar !== undefined ) ){
         let promise = cube.soundChar.writeValue( buf ).catch(error => {
             // re-try
-            setTimeout( stopSound(), 100 );
+            setTimeout( stopSound( cubeID ), 100 );
         })
     }
 
@@ -390,8 +394,17 @@ const stopSound = () => {
 
 // Play Note
 const playNote = () => {
+
   const note = document.getElementById( 'noteSlider' ).value;
-  playSingleNote( gCubes[0], note, 30 );
+
+  for( let id of [ 0, 1 ] ){
+
+    if( gCubes[ id ] && gCubes[ id ].soundChar ){
+      playSingleNote( gCubes[ id ], note, 30 );
+    }
+    
+  }
+
 }
 
 const updateNoteText = () => {
@@ -439,13 +452,22 @@ const procKeyDown = ( code ) => {
 
 // Pre-installed SE
 const playPreInSE = () => {
+
   const idSE = document.getElementById( 'preInSE' ).value;
-  playSE( gCubes[0], idSE );
+
+  for( let id of [ 0, 1 ] ){
+
+    if( gCubes[ id ] && gCubes[ id ].soundChar ){
+      playSE( gCubes[ id ], idSE );
+    }
+    
+  }
+
 }
 
 // MIDI Melody
 let isPlayingMIDIMelody = false;
-let gPlayMIDIMolodyTimerID = undefined;
+let gPlayMIDIMolodyTimerID = [ undefined, undefined ];
 
 const playMIDIMelody = () => {
 
@@ -456,51 +478,57 @@ const playMIDIMelody = () => {
   disablePlayNoteButton();
   disablePlayPreInSEButton();
 
-  melodyBuf = new Uint8Array( melodyTracksOriginal[ getTrackId( 1 ) ] );
+  for( let id of [ 0, 1 ] ){
 
-  playMIDIMelodyCore();
+    melodyBuf[ id ] = new Uint8Array( melodyTracksOriginal[ getTrackId( id + 1 ) ] );
+    playMIDIMelodyCore( id );
+
+  } 
 
 }
 
-const playMIDIMelodyCore = () => {
+const playMIDIMelodyCore = ( cubeId ) => {
 
   if( isPlayingMIDIMelody === false ){
     return;
   }
 
   let duration;
-  if( melodyBuf.length > MAX_SOUND_OPERATION_NUM * 3 ){
+  if( melodyBuf[ cubeId ].length > MAX_SOUND_OPERATION_NUM * 3 ){
 
     const buf = new Uint8Array( MAX_SOUND_OPERATION_NUM * 3 + 2 );
 
     buf[0] = 0x01;
     buf[1] = MAX_SOUND_OPERATION_NUM;
-    buf.set( melodyBuf.slice( 0, MAX_SOUND_OPERATION_NUM * 3 ), 2 );
+    buf.set( melodyBuf[ cubeId ].slice( 0, MAX_SOUND_OPERATION_NUM * 3 ), 2 );
     console.log( "a: " + buf );
-    playMelody( gCubes[0], buf );
-    duration = getDurationOfMelody( melodyBuf.slice( 0, MAX_SOUND_OPERATION_NUM * 3 ) );
-    melodyBuf = melodyBuf.slice( MAX_SOUND_OPERATION_NUM * 3, melodyBuf.length );
+    playMelody( gCubes[ cubeId ], buf );
+    duration = getDurationOfMelody( melodyBuf[ cubeId ].slice( 0, MAX_SOUND_OPERATION_NUM * 3 ) );
+    melodyBuf[ cubeId ] = melodyBuf[ cubeId ].slice( MAX_SOUND_OPERATION_NUM * 3, melodyBuf[ cubeId ].length );
 
   }else{
 
-    const buf = new Uint8Array( melodyBuf.length + 2 );
+    const buf = new Uint8Array( melodyBuf[ cubeId ].length + 2 );
 
     buf[0] = 0x01;
-    buf[1] = melodyBuf.length / 3;
-    buf.set( melodyBuf, 2 );
-    playMelody( gCubes[0], buf );
-    duration = getDurationOfMelody( melodyBuf );
-    melodyBuf = undefined;
+    buf[1] = melodyBuf[ cubeId ].length / 3;
+    buf.set( melodyBuf[ cubeId ], 2 );
+    playMelody( gCubes[ cubeId ], buf );
+    duration = getDurationOfMelody( melodyBuf[ cubeId ] );
+    melodyBuf[ cubeId ] = undefined;
   }
-  gPlayMIDIMolodyTimerID = setTimeout( onNextMIDIMelody, duration );
+  gPlayMIDIMolodyTimerID[ cubeId ] = setTimeout( ( cubeId === 0 ) ? onNextMIDIMelodyCube1 : onNextMIDIMelodyCube2, duration );
 
 }
 
-const onNextMIDIMelody = () => {
+const onNextMIDIMelodyCube1 = () => { onNextMIDIMelody( 0 ); }
+const onNextMIDIMelodyCube2 = () => { onNextMIDIMelody( 1 ); }
+
+const onNextMIDIMelody = ( cubeId ) => {
   if( melodyBuf === undefined ){
     endPlayMIDIMelody();
   }else{
-    playMIDIMelodyCore();
+    playMIDIMelodyCore( cubeId );
   }
 }
 
@@ -518,13 +546,13 @@ const endPlayMIDIMelody = () => {
 const stopMIDIMelody = () => {
 
     // Clear TimerID
-    if( gPlayMIDIMolodyTimerID !== undefined ){
-        clearTimeout( gPlayMIDIMolodyTimerID );
-        gPlayMIDIMolodyTimerID = undefined;
+    for( let id of [ 0, 1 ] ){
+      if( gPlayMIDIMolodyTimerID[ id ] !== undefined ){
+        clearTimeout( gPlayMIDIMolodyTimerID[ id ] );
+        gPlayMIDIMolodyTimerID[ id ] = undefined;
+      }
+      if( gCubes[ id ] ){ stopSound( id ); }
     }
-
-    if( gCubes[0] ){ stopSound( gCubes[0] ); }
-    if( gCubes[1] ){ stopSound( gCubes[1] ); }
 
     if( isPlayingMIDIMelody ){
         isPlayingMIDIMelody = false;
@@ -536,7 +564,6 @@ const stopMIDIMelody = () => {
     }
 
 }
-
 
 
 // Sample Melody
@@ -591,8 +618,8 @@ const stopSampleMelody = () => {
         gPlaySampleMolodyTimerID = undefined;
     }
 
-    if( gCubes[0] ){ stopSound( gCubes[0] ); }
-    if( gCubes[1] ){ stopSound( gCubes[1] ); }
+    if( gCubes[0] ){ stopSound( 0 ); }
+    if( gCubes[1] ){ stopSound( 1 ); }
 
     if( isPlayingSampleMelody ){
         isPlayingSampleMelody = false;
