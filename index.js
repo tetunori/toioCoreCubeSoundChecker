@@ -24,11 +24,12 @@ fileSelector.onchange = () => {
     disablePlayMIDIButton();
     const parsedMidiData = parseMIDIData( fileReader.result );
     console.log( parsedMidiData );
+
+    updateTrackSelector( parsedMidiData );
     
     if( isSupportedMidiData( parsedMidiData ) ){
       melodyBufOriginal = convertMIDIToCubeSound( parsedMidiData );
       // console.log( melodyBufOriginal );
-      melodyBuf = new Uint8Array( melodyBufOriginal );
       enableMIDIButton();
     }else{
       console.log( 'Error. Unsupported file.' );
@@ -61,6 +62,50 @@ const isSupportedMidiData = ( data ) => {
 
 	return retVal;
 
+}
+
+const updateTrackSelector = ( midi ) => {
+
+  for( let cubeId of [ 1, 2 ] ){
+
+    // Initialize selector
+    const select = document.getElementById( 'MIDITrackCube' + cubeId );
+
+    if ( select.hasChildNodes() ) {
+      while( select.childNodes.length > 0 ) {
+        select.removeChild( select.firstChild );
+      }
+    }
+
+    // Append selector items
+    for( let trackId = 0; trackId < midi.tracks.length; trackId++ ){
+      
+      const option = document.createElement( 'option' );
+      option.value = '' + ( trackId + 1 );
+      option.text = 'Track ' + ( trackId + 1 );
+      select.appendChild( option );
+
+    }
+
+  }
+  
+  // Set appropriate item 
+  let count = 1;
+  for( let trackId = 0; trackId < midi.tracks.length; trackId++ ){
+    
+    if( 1 ){
+
+      const select = document.getElementById( 'MIDITrackCube' + count );
+      select.selectedIndex = trackId;
+      count++;
+      if( count > 2 ){
+        break;
+      }
+
+    }
+
+  }
+  
 }
 
 const convertMIDIToCubeSound = ( midi ) => {
@@ -115,7 +160,7 @@ const getDurationOfMelody = ( melody ) => {
 
 
 const enableMIDIButton = () => {
-  if( gCubes[0] && gCubes[0].soundChar && melodyBuf ){
+  if( gCubes[0] && gCubes[0].soundChar && melodyBufOriginal ){
     enablePlayMIDIButton();    
   }
 }
