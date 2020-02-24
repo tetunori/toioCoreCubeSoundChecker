@@ -127,11 +127,18 @@ const convertMIDIToCubeSound = ( midi ) => {
     const melodyArray = [];
     const notes = track.notes;
     let deltaMathRound10msec = 0;
-    
+
     notes.forEach( ( note, index ) => {
 
       let restTime = 0; 
-      if( index > 0 ){
+
+      if( ( index === 0 ) && ( note.time !== 0 ) ){
+
+        const duration10msec = note.time * 100;
+        inputNoteData( Math.round( duration10msec ), NOTE_OFF_NUMBER, note.velocity, melodyArray );
+        deltaMathRound10msec = Math.round( duration10msec ) - duration10msec;
+
+      }else if( index > 0 ){
 
         if( note.time === notes[ index - 1 ].time ){
           // Skip for multiple attack
