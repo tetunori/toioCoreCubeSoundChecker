@@ -125,8 +125,11 @@ const convertMIDIToCubeSound = ( midi ) => {
   midi.tracks.forEach( ( track, trackId ) => {
 
     const melodyArray = [];
-    const notes = track.notes
+    const notes = track.notes;
+    let deltaMathRound10msec = 0;
+    
     notes.forEach( ( note, index ) => {
+
       let restTime = 0; 
       if( index > 0 ){
 
@@ -139,12 +142,16 @@ const convertMIDIToCubeSound = ( midi ) => {
 
       }
 
-      if( restTime > 0.01 ){
-        inputNoteData( restTime, NOTE_OFF_NUMBER, note.velocity, melodyArray );
-        inputNoteData( note.duration, note.midi, note.velocity, melodyArray );
-      }else{
-        inputNoteData( note.duration, note.midi, note.velocity, melodyArray );
+      const restTime10msec = restTime * 100 - deltaMathRound10msec;
+      if( Math.round( restTime10msec ) > 0 ){
+        inputNoteData( Math.round( restTime10msec ), NOTE_OFF_NUMBER, note.velocity, melodyArray );
       }
+      deltaMathRound10msec = Math.round( restTime10msec ) - restTime10msec;
+
+      const duration10msec = note.duration * 100 - deltaMathRound10msec;
+      inputNoteData( Math.round( duration10msec ), note.midi, note.velocity, melodyArray );
+      deltaMathRound10msec = Math.round( duration10msec ) - duration10msec;
+
     });
     trackArray[ trackId ] = melodyArray;
 
@@ -168,7 +175,7 @@ const convertMIDIToCubeSound = ( midi ) => {
 
       for( let i = 0; i < paddingOperationSize; i++ ){
 
-        const DURATION = 0.01; // minimum value( 10msec ).
+        const DURATION = 1; // minimum value( 10msec ).
         const VELOCITY = 255;
         inputNoteData( DURATION, NOTE_OFF_NUMBER, VELOCITY, track );
 
@@ -215,14 +222,14 @@ const enableMIDIButton = () => {
 
 
 // Input converted Note data to the target array.
-// duration : [Input]  Duration(sec) of the note
+// duration : [Input]  Duration(unit 10msec) of the note
 // note 		: [Input]  Note data
 // velocity : [Input]  Velocity of note in the MIDI data.
 // 										 we need handle Velocity:0 as note off. Others are as 'on' 
 // target 	: [Output] A note is pushed into this array.
 const inputNoteData = ( duration, note, velocity, target ) => {
   
-  const MAX_NOTE_DURATION = 2.50;
+  const MAX_NOTE_DURATION = 250;
   let leftDuration = duration;
 
   // console.log( duration );
@@ -242,12 +249,12 @@ const inputSingleNoteData = ( duration, note, velocity, target ) => {
   
   const NOTE_OFF_NUMBER = 128;
 
+  target.push( duration );
+
 	if( velocity > 0 ){
-		target.push( Math.round( duration * 100 ) );
 		target.push( note );
 	}else{
 		// velocity === 0.
-    target.push( Math.round( duration * 100 ) );
 		target.push( NOTE_OFF_NUMBER );
 	}
   target.push( 0xFF );
@@ -584,7 +591,7 @@ const endPlayMIDIMelody = () => {
       enablePlayNoteButton();
       enablePlayPreInSEButton();
   }
-  
+
 }
 
 const stopMIDIMelody = () => {
