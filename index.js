@@ -90,6 +90,11 @@ const updateTrackSelector = ( tracks ) => {
       select.appendChild( option );
 
     }
+    
+    const option = document.createElement( 'option' );
+    option.value = '0';
+    option.text = 'OFF'; 
+    select.appendChild( option ); 
 
   }
   
@@ -124,6 +129,7 @@ const convertMIDIToCubeSound = ( midi ) => {
     notes.forEach( ( note, index ) => {
       let restTime = 0; 
       if( index > 0 ){
+
         if( note.time === notes[ index - 1 ].time ){
           // Skip for multiple attack
           return; // continue forEach.
@@ -144,6 +150,34 @@ const convertMIDIToCubeSound = ( midi ) => {
 
   });
 
+  // Padding for large size music
+  // to avoid variation of bluetooth trasmission time
+  trackArray.forEach( track => {
+
+    const MAX_SOUND_OPERATION_NUM = 59;
+    const MAX_SOUND_BINARY_NUM = 3 * MAX_SOUND_OPERATION_NUM;
+
+    if( track.length > MAX_SOUND_BINARY_NUM ){
+      
+      const numChunksInTrack = Math.floor( track.length / ( MAX_SOUND_BINARY_NUM ) );
+      const chunksDataSize = numChunksInTrack * MAX_SOUND_BINARY_NUM;
+      const fraction = track.length - chunksDataSize;
+      const paddingDataSize = MAX_SOUND_BINARY_NUM - fraction;
+      const paddingOperationSize = paddingDataSize / 3;
+      // console.log( 'paddingOperationSize ' + paddingOperationSize );
+
+      for( let i = 0; i < paddingOperationSize; i++ ){
+
+        const DURATION = 0.01; // minimum value( 10msec ).
+        const VELOCITY = 255;
+        inputNoteData( DURATION, NOTE_OFF_NUMBER, VELOCITY, track );
+
+      }
+      
+    }
+
+  });
+
   console.log( trackArray );
   return trackArray;
 
@@ -152,7 +186,7 @@ const convertMIDIToCubeSound = ( midi ) => {
 const getTrackId = ( cubeId ) => {
 
   const select = document.getElementById( 'MIDITrackCube' + cubeId );
-  return select.selectedIndex;
+  return select.options[ select.selectedIndex ].value;
 
 }
 
@@ -359,9 +393,10 @@ const playSE = ( cube, idSE ) => {
 
 const playSingleNote = ( cube, note, duration ) => {
 
-    // Specify single note sound
-    const buf = new Uint8Array([ 0x01, 0x01, duration, note, 0xFF ]);
-    playMelody( cube, buf );
+  // Specify single note sound
+  const buf = new Uint8Array([ 0x01, 0x01, duration, note, 0xFF ]);
+  // const buf = new Uint8Array([ 1,1,200,75,255 ]);  // for test. later, will be deteled.
+  playMelody( cube, buf );
 
 }
 
@@ -467,7 +502,7 @@ const playPreInSE = () => {
 
 // MIDI Melody
 let isPlayingMIDIMelody = false;
-let gPlayMIDIMolodyTimerID = [ undefined, undefined ];
+let gPlayMIDIMelodyTimerID = [ undefined, undefined ];
 
 const playMIDIMelody = () => {
 
@@ -480,8 +515,12 @@ const playMIDIMelody = () => {
 
   for( let id of [ 0, 1 ] ){
 
-    melodyBuf[ id ] = new Uint8Array( melodyTracksOriginal[ getTrackId( id + 1 ) ] );
-    playMIDIMelodyCore( id );
+    if( getTrackId( id + 1 ) !== '0' ){
+
+      melodyBuf[ id ] = new Uint8Array( melodyTracksOriginal[ getTrackId( id + 1 ) - 1 ] );
+      playMIDIMelodyCore( id );
+
+    }
 
   } 
 
@@ -489,7 +528,8 @@ const playMIDIMelody = () => {
 
 const playMIDIMelodyCore = ( cubeId ) => {
 
-  if( isPlayingMIDIMelody === false ){
+  if( ( melodyBuf[ cubeId ] === undefined ) 
+        || ( isPlayingMIDIMelody === false ) ){
     return;
   }
 
@@ -501,7 +541,7 @@ const playMIDIMelodyCore = ( cubeId ) => {
     buf[0] = 0x01;
     buf[1] = MAX_SOUND_OPERATION_NUM;
     buf.set( melodyBuf[ cubeId ].slice( 0, MAX_SOUND_OPERATION_NUM * 3 ), 2 );
-    console.log( "a: " + buf );
+    console.log( "MIDI playmelody buf: " + buf );
     playMelody( gCubes[ cubeId ], buf );
     duration = getDurationOfMelody( melodyBuf[ cubeId ].slice( 0, MAX_SOUND_OPERATION_NUM * 3 ) );
     melodyBuf[ cubeId ] = melodyBuf[ cubeId ].slice( MAX_SOUND_OPERATION_NUM * 3, melodyBuf[ cubeId ].length );
@@ -513,11 +553,12 @@ const playMIDIMelodyCore = ( cubeId ) => {
     buf[0] = 0x01;
     buf[1] = melodyBuf[ cubeId ].length / 3;
     buf.set( melodyBuf[ cubeId ], 2 );
+    console.log( "MIDI playmelody buf: " + buf );
     playMelody( gCubes[ cubeId ], buf );
     duration = getDurationOfMelody( melodyBuf[ cubeId ] );
     melodyBuf[ cubeId ] = undefined;
   }
-  gPlayMIDIMolodyTimerID[ cubeId ] = setTimeout( ( cubeId === 0 ) ? onNextMIDIMelodyCube1 : onNextMIDIMelodyCube2, duration );
+  gPlayMIDIMelodyTimerID[ cubeId ] = setTimeout( ( cubeId === 0 ) ? onNextMIDIMelodyCube1 : onNextMIDIMelodyCube2, duration );
 
 }
 
@@ -525,7 +566,7 @@ const onNextMIDIMelodyCube1 = () => { onNextMIDIMelody( 0 ); }
 const onNextMIDIMelodyCube2 = () => { onNextMIDIMelody( 1 ); }
 
 const onNextMIDIMelody = ( cubeId ) => {
-  if( melodyBuf === undefined ){
+  if( melodyBuf[ cubeId ] === undefined ){
     endPlayMIDIMelody();
   }else{
     playMIDIMelodyCore( cubeId );
@@ -533,6 +574,8 @@ const onNextMIDIMelody = ( cubeId ) => {
 }
 
 const endPlayMIDIMelody = () => {
+
+  // console.log( 'endPlayMIDIMelody' );
   if( isPlayingMIDIMelody ){
       isPlayingMIDIMelody = false;
       disableStopMIDIButton();
@@ -541,15 +584,16 @@ const endPlayMIDIMelody = () => {
       enablePlayNoteButton();
       enablePlayPreInSEButton();
   }
+  
 }
 
 const stopMIDIMelody = () => {
 
     // Clear TimerID
     for( let id of [ 0, 1 ] ){
-      if( gPlayMIDIMolodyTimerID[ id ] !== undefined ){
-        clearTimeout( gPlayMIDIMolodyTimerID[ id ] );
-        gPlayMIDIMolodyTimerID[ id ] = undefined;
+      if( gPlayMIDIMelodyTimerID[ id ] !== undefined ){
+        clearTimeout( gPlayMIDIMelodyTimerID[ id ] );
+        gPlayMIDIMelodyTimerID[ id ] = undefined;
       }
       if( gCubes[ id ] ){ stopSound( id ); }
     }
