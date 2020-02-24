@@ -94,7 +94,8 @@ const updateTrackSelector = ( tracks ) => {
     const option = document.createElement( 'option' );
     option.value = '0';
     option.text = 'OFF'; 
-    select.appendChild( option ); 
+    select.appendChild( option );
+    select.selectedIndex = select.options.length - 1;
 
   }
   
@@ -114,6 +115,7 @@ const updateTrackSelector = ( tracks ) => {
     }
 
   }
+
   
 }
 
