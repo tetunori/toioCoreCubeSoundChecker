@@ -555,7 +555,7 @@ const playMIDIMelodyCore = ( cubeId ) => {
     buf[0] = 0x01;
     buf[1] = MAX_SOUND_OPERATION_NUM;
     buf.set( melodyBuf[ cubeId ].slice( 0, MAX_SOUND_OPERATION_NUM * 3 ), 2 );
-    console.log( "MIDI playmelody buf: " + buf );
+    // console.log( "MIDI playmelody buf: " + buf );
     playMelody( gCubes[ cubeId ], buf );
     duration = getDurationOfMelody( melodyBuf[ cubeId ].slice( 0, MAX_SOUND_OPERATION_NUM * 3 ) );
     melodyBuf[ cubeId ] = melodyBuf[ cubeId ].slice( MAX_SOUND_OPERATION_NUM * 3, melodyBuf[ cubeId ].length );
@@ -567,7 +567,7 @@ const playMIDIMelodyCore = ( cubeId ) => {
     buf[0] = 0x01;
     buf[1] = melodyBuf[ cubeId ].length / 3;
     buf.set( melodyBuf[ cubeId ], 2 );
-    console.log( "MIDI playmelody buf: " + buf );
+    // console.log( "MIDI playmelody buf: " + buf );
     playMelody( gCubes[ cubeId ], buf );
     duration = getDurationOfMelody( melodyBuf[ cubeId ] );
     melodyBuf[ cubeId ] = undefined;
