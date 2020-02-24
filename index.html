@@ -19,11 +19,15 @@
 
     <!-- dropify(overrides file input) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <link rel='stylesheet' href='http://cdn.rawgit.com/JeremyFagis/dropify/master/dist/css/dropify.min.css'/>  
-    <script src='http://cdn.rawgit.com/JeremyFagis/dropify/master/dist/js/dropify.min.js'></script>
+    <link rel='stylesheet' href='https://cdn.rawgit.com/JeremyFagis/dropify/master/dist/css/dropify.min.css'/>  
+    <script src='https://cdn.rawgit.com/JeremyFagis/dropify/master/dist/js/dropify.min.js'></script>
     
     <!-- Code prettify -->
     <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+
+    <!-- For parsing MIDI file -->
+    <script src="https://unpkg.com/@tonejs/midi"></script>
+
   </head>
   
   <body>    
@@ -48,28 +52,54 @@
           </div>
           <div class="operationContent"> 
             <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" id="btConnectCube1">Connect Cube 1</button>
-            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" id="btConnectCube2">Connect Cube 2</button>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btConnectCube2">Connect Cube 2</button>
           </div>
 
           <div class="operationTitleText"> 
-            2-1. Test a single note.
+            2-1. Test a single note. (←/→ keys also available)
           </div>
           <div class="operationContent"> 
-            <div id="noteText" class="noteText">
-              <input id="noteSlidebar" type="range" min="0" max="127" value="57" step="1"/> 57(= A4)
-            </div>
-            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlaySample">PLAY SAMPLE</button>
-            <button class="mui-btn mui-btn--small mui-btn--accent mui-btn--raised" disabled id="btStopSample">STOP</button>
+            <div id="noteText" class="noteText">57(= A4)</div>
+            <input id="noteSlider" type="range" min="0" max="127" value="57" step="1" /> 
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlayNote">PLAY NOTE</button>
+          </div>
+
+          <div class="operationTitleText"> 
+            2-2. Pre-installed Sound Effect.
+          </div>
+          <div class="operationContent"> 
+            <select id="preInSE">
+              <option value="0">Enter</option>
+              <option value="1">Selected</option>
+              <option value="2">Cancel</option>
+              <option value="3">Cursor</option>
+              <option value="4">Mat in</option>
+              <option value="5">Mat out</option>
+              <option value="6">Get 1</option>
+              <option value="7">Get 2</option>
+              <option value="8">Get 3</option>
+              <option value="9">Effect 1</option>
+              <option value="10">Effect 2</option>
+            </select>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlayPreInSE">PLAY SE</button>
           </div>
           
           <div class="operationTitleText"> 
-            2-2. Select/drag & drop a MIDI audio file.
+            2-3. Select/drag & drop a MIDI audio file.
           </div>
           <div class="operationContent"> 
             <input type="file" accept="audio/mid" class="dropify" id="fileSelector" data-height="100" />  
+            <div id="MIDITrackDropDown"> 
+              Cube 1: <select id="MIDITrackCube1">
+                <option value="0">OFF</option>
+              </select>
+              , Cube 2: <select id="MIDITrackCube2">
+                <option value="0">OFF</option>
+              </select>
+            </div>
             <div class="associatedButton">
-              <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlaySound">PLAY</button>
-              <button class="mui-btn mui-btn--small mui-btn--accent mui-btn--raised" disabled id="btStopSound">STOP</button>
+              <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlayMIDI">PLAY</button>
+              <button class="mui-btn mui-btn--small mui-btn--accent mui-btn--raised" disabled id="btStopMIDI">STOP</button>
             </div>
           </div>
         </div>
@@ -79,19 +109,33 @@
       <td>
         <div id="tableRight" class="tableRight"> 
           <div class="operationTitleText"> 
-            Appendix.
+            Appendix A. Copy code.
           </div>
           <div class="operationContent"> 
             <!-- Copy code region -->
             <pre id="output" class="prettyprint lang-js"></pre>
             <div class="associatedButton">
               <button class="mui-btn mui-btn--small" disabled id="copyCode">Copy code</button>
-              <div class="mui--text-accent" id="copiedText" style='visibility:hidden;'>COPIED!</div>
+              <div class="mui--text-accent" id="copiedText" style='display:none;'>COPIED!</div>
             </div>
-
+          </div>
+          <div class="operationTitleText"> 
+            Appendix B. Sample sounds.
+          </div>
+          <div class="operationContent">
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btSE1">SE1</button>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btSE2">SE2</button>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btSE3">SE3</button>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btSE4">SE4</button>
+            <br>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlaySample">PLAY MUSIC1</button>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlaySample2">PLAY MUSIC2</button>
+            <button class="mui-btn mui-btn--small mui-btn--primary mui-btn--raised" disabled id="btPlaySample3">PLAY MUSIC3</button>
+            <button class="mui-btn mui-btn--small mui-btn--accent mui-btn--raised" disabled id="btStopSample">STOP</button>
+ 
             <!-- Link to readme -->
             <div class="linkButton">
-              <button class="mui-btn mui-btn--small mui-btn--raised" id="btShowOperation">
+              <button class="mui-btn mui-btn--small mui-btn--raised" id="btShowReadme">
                 Show README <i class="fas fa-external-link-alt"></i>
               </button>
             </div>

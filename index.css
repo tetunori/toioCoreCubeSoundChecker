@@ -23,12 +23,17 @@ div.descriptionText {
 
 div.noteText {
     margin-top: 3px;
+    margin-left: 30px;
     font-weight: 500;
     font-size: 16px;
 }
 
+#noteSlider{
+  margin-right: 10px;
+}
+
 table {
-    width: 700px;
+    width: 909px;
 }
 
 td {
@@ -76,7 +81,19 @@ div.copyWriteText {
 }
 
 .linkButton {
-    text-align: center;
+  margin-top: 28px;
+  text-align: right;
+}
+
+#MIDITrackDropDown {
+  margin-bottom: 5px;
+  margin-top: 10px;
+  text-align: right;
+}
+
+#preInSE {
+  margin-top: 10px;
+  margin-right: 10px;
 }
 
 /* On dropify */
@@ -93,7 +110,7 @@ pre.prettyprint {
     font-family: Menlo, 'Bitstream Vera Sans Mono', 'DejaVu Sans Mono', Monaco, Consolas, monospace;
     overflow: auto;
     tab-size: 4;
-    height:16em;
+    height:8em;
     background-color:#eee;
     margin-bottom: 0em;
 }
