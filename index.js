@@ -8,8 +8,8 @@ const showDefaultMessageCode = () => {
     '\n' + 'const melody = [\n';
 			stringForToioJs += '];' + '\n\n\n\n\n\n\n\n';
   
-  document.getElementById("output").innerHTML = stringForToioJs;
-  document.getElementById("output").setAttribute("class", "prettyprint lang-js linenums");
+  document.getElementById("outputCode").innerHTML = stringForToioJs;
+  document.getElementById("outputCode").setAttribute("class", "prettyprint lang-js linenums");
   PR.prettyPrint();
 
 }
@@ -56,7 +56,7 @@ const getSelectedTrackIDs = () => {
 
   }
 
-  console.log( retValue );
+  // console.log( retValue );
   return retValue;
 
 }
@@ -584,7 +584,7 @@ const playMIDIMelodyCore = ( cubeId ) => {
     buf[0] = 0x01;
     buf[1] = MAX_SOUND_OPERATION_NUM;
     buf.set( melodyBuf[ cubeId ].slice( 0, MAX_SOUND_OPERATION_NUM * 3 ), 2 );
-    console.log( "MIDI playmelody buf: " + buf );
+    // console.log( "MIDI playmelody buf: " + buf );
     playMelody( gCubes[ cubeId ], buf );
     duration = getDurationOfMelody( melodyBuf[ cubeId ].slice( 0, MAX_SOUND_OPERATION_NUM * 3 ) );
     melodyBuf[ cubeId ] = melodyBuf[ cubeId ].slice( MAX_SOUND_OPERATION_NUM * 3, melodyBuf[ cubeId ].length );
@@ -596,7 +596,7 @@ const playMIDIMelodyCore = ( cubeId ) => {
     buf[0] = 0x01;
     buf[1] = melodyBuf[ cubeId ].length / 3;
     buf.set( melodyBuf[ cubeId ], 2 );
-    console.log( "MIDI playmelody buf: " + buf );
+    // console.log( "MIDI playmelody buf: " + buf );
     playMelody( gCubes[ cubeId ], buf );
     duration = getDurationOfMelody( melodyBuf[ cubeId ] );
     melodyBuf[ cubeId ] = undefined;
@@ -836,10 +836,35 @@ const updateCodeMIDI = ( selectedTrackIDs, melodyTracks ) => {
 
 const updateCode = ( codeText ) => {
   
-  document.getElementById( 'output' ).innerHTML = codeText;
-  document.getElementById( 'output' ).setAttribute( 'class', 'prettyprint lang-js linenums' );
+  document.getElementById( 'outputCode' ).innerHTML = codeText;
+  document.getElementById( 'outputCode' ).setAttribute( 'class', 'prettyprint lang-js linenums' );
   PR.prettyPrint();
 
+}
+
+
+// Copy Code
+document.getElementById( "copyCode" ).addEventListener( "click", async ev => {
+  copyCode( document.getElementById( 'outputCode' ).innerText );
+});
+
+// from https://qiita.com/simiraaaa/items/2e7478d72f365aa48356
+function copyCode( string ){
+
+	const temp = document.createElement( 'div' );
+	temp.appendChild( document.createElement('pre') ).textContent = string;
+
+	const s = temp.style;
+	s.position = 'fixed';
+	s.left = '-100%';
+
+	document.body.appendChild( temp );
+	document.getSelection().selectAllChildren( temp );
+	const result = document.execCommand('copy');
+  document.body.removeChild( temp );
+  
+  return result;
+  
 }
 
 // Initialize 
