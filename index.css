@@ -109,8 +109,10 @@ pre.prettyprint {
     font-size:12px;
     font-family: Menlo, 'Bitstream Vera Sans Mono', 'DejaVu Sans Mono', Monaco, Consolas, monospace;
     overflow: auto;
+    white-space: pre-wrap; 
     tab-size: 4;
-    height:8em;
+    height:16em;
+    width:600px;
     background-color:#eee;
     margin-bottom: 0em;
 }
