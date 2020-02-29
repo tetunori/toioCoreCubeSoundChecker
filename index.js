@@ -251,8 +251,11 @@ const inputNoteData = ( duration, note, velocity, target ) => {
   
   const MAX_NOTE_DURATION = 250;
   let leftDuration = duration;
-
   // console.log( duration );
+
+  if( duration === 0 ){
+    return;
+  }
 
   while( MAX_NOTE_DURATION < leftDuration ){    
     
@@ -566,6 +569,16 @@ let gPlayMIDIMelodyTimerID = [ undefined, undefined, undefined ];
 
 const playMIDIMelody = () => {
 
+  // Clear TimerID
+  for( let id of CUBE_ID_ARRAY ){
+
+    if( gPlayMIDIMelodyTimerID[ id ] !== undefined ){
+      clearTimeout( gPlayMIDIMelodyTimerID[ id ] );
+      gPlayMIDIMelodyTimerID[ id ] = undefined;
+    }
+
+  }
+
   gIsPlayingMIDIMelody = true;
   disablePlayMIDIButton();
   enableStopMIDIButton();
@@ -643,7 +656,7 @@ const playMIDIMelodyCore = ( cubeId ) => {
       break;
   }
   gPlayMIDIMelodyTimerID[ cubeId ] = setTimeout( callback, duration );
-  
+
 }
 
 // -- Callbacks for continuous playing
@@ -853,7 +866,7 @@ const updateCodeMIDI = ( selectedTrackIDs, melodyTracks ) => {
       codeText += 
       'const track' + ( trackID + 1 ) + '_' + ( count + 1 ) +
       ' = new Uint8Array([ 0x03, 0x01, ' + 
-      '0x' + dexToHexString2gidits( soundBinaryNum ) + ', ';
+      '0x' + dexToHexString2gidits( soundBinaryNum / 3 ) + ', ';
 
       const offset = count * MAX_SOUND_BINARY_NUM;
       const soundBinaryArray = track.slice( offset, soundBinaryNum + offset );
