@@ -33,7 +33,7 @@ div.noteText {
 }
 
 table {
-    width: 909px;
+    width: 1150px;
 }
 
 td {
@@ -99,7 +99,7 @@ div.copyWriteText {
 /* On dropify */
 div.dropify-wrapper {
     margin-top: 8px;
-    width:350px;
+    width:470px;
 }
   
 /* Pretty printing styles. Used with prettify.js. */

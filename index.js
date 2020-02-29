@@ -1,10 +1,10 @@
 // Global Constants
 const MAX_SOUND_OPERATION_NUM = 59;
-const CUBE_ID_ARRAY = [ 0, 1 ];
+const CUBE_ID_ARRAY = [ 0, 1, 2 ];
 const SUPPORT_CUBE_NUM = CUBE_ID_ARRAY.length;
 
 // Global Variables.
-const gCubes = [ undefined, undefined ];
+const gCubes = [ undefined, undefined, undefined ];
 
 
 // File Selector
@@ -86,7 +86,7 @@ const updateTrackSelector = ( tracks ) => {
   
   // Set appropriate items for each selector.
   let count = 1;
-  let retValue = [ undefined, undefined ];
+  let retValue = [ undefined, undefined, undefined ];
   for( let trackId = 0; trackId < tracks.length; trackId++ ){
     
     if( tracks[ trackId ].length > 0 ){
@@ -95,7 +95,7 @@ const updateTrackSelector = ( tracks ) => {
       select.selectedIndex = trackId;
       retValue[ count - 1 ] = trackId;
       count++;
-      if( count > 2 ){
+      if( count > SUPPORT_CUBE_NUM ){
         break;
       }
 
@@ -117,7 +117,7 @@ const enableMIDIButton = () => {
 // -- functions : Get track's index array that is selected now. 
 const getSelectedTrackIndex = () => {
 
-  const retValue = [ undefined, undefined ];
+  const retValue = [ undefined, undefined, undefined ];
 
   for( let cubeId of CUBE_ID_ARRAY ){
 
@@ -309,7 +309,12 @@ const connectNewCube = () => {
         cube.device = device;
         if( cube === gCubes[0] ){
             turnOnLightCian( cube );
-            changeConnectCubeButtonStatus( 2, undefined, true );
+            const cubeID = 1;
+            changeConnectCubeButtonStatus( cubeID, undefined, true );
+        }else if( cube === gCubes[1] ){
+            turnOnLightGreen( cube );
+            const cubeID = 2;
+            changeConnectCubeButtonStatus( cubeID, undefined, true );
         }
         changeConnectCubeButtonStatus( undefined, cube, false );
         return device.gatt.connect();
@@ -325,13 +330,15 @@ const connectNewCube = () => {
     }).then( characteristic => {
         cube.lightChar = characteristic;
         if( cube === gCubes[0] ){
-            turnOnLightCian( cube );
-            enablePlaySampleButton();
-            enablePlayNoteButton();
-            enablePlayPreInSEButton();
-            enableMIDIButton();
+          turnOnLightCian( cube );
+          enablePlaySampleButton();
+          enablePlayNoteButton();
+          enablePlayPreInSEButton();
+          enableMIDIButton();
+        }else if( cube === gCubes[1] ){
+          turnOnLightGreen( cube );
         }else{
-            turnOnLightGreen( cube );
+          turnOnLightRed( cube );
         }
     });
 
@@ -370,6 +377,17 @@ const turnOnLightCian = ( cube ) => {
     }
 
 }
+
+const turnOnLightRed = ( cube ) => {
+
+    // Red light
+    const buf = new Uint8Array([ 0x03, 0x00, 0x01, 0x01, 0xFF, 0x00, 0x00 ]);
+    if( ( cube !== undefined ) && ( cube.lightChar !== undefined ) ){
+        cube.lightChar.writeValue( buf );
+    }
+
+}
+
 
 // -- Play Sound effect Commands
 const playSE = ( cube, idSE ) => {
@@ -431,12 +449,14 @@ const changeButtonStatus = ( btID, enabled ) => {
 const changeConnectCubeButtonStatus = ( idButton, cube, enabled ) => {
 
     if( idButton ){
-        changeButtonStatus( 'btConnectCube' + idButton, enabled );
+        changeButtonStatus( 'btConnectCube' + ( idButton + 1 ), enabled );
     }else{
         if( gCubes[0] === cube ){
             changeButtonStatus( 'btConnectCube1', enabled );
-        }else{
+        }else if( gCubes[1] === cube ){
             changeButtonStatus( 'btConnectCube2', enabled );
+        }else{
+            changeButtonStatus( 'btConnectCube3', enabled );
         }
     }
     
@@ -542,7 +562,7 @@ const playPreInSE = () => {
 // Play MIDI Melody
 // -- Main function
 let gIsPlayingMIDIMelody = false;
-let gPlayMIDIMelodyTimerID = [ undefined, undefined ];
+let gPlayMIDIMelodyTimerID = [ undefined, undefined, undefined ];
 
 const playMIDIMelody = () => {
 
@@ -607,15 +627,29 @@ const playMIDIMelodyCore = ( cubeId ) => {
     playMelody( gCubes[ cubeId ], buf );
     duration = getDurationOfMelody( currentMelodyArray );
     gMelodyBufArray[ cubeId ] = undefined;
-  }
-  gPlayMIDIMelodyTimerID[ cubeId ] = 
-    setTimeout( ( cubeId === 0 ) ? onNextMIDIMelodyCube1 : onNextMIDIMelodyCube2, duration );
 
+  }
+
+  let callback = undefined;
+  switch( cubeId ){
+    case 0:
+      callback = onNextMIDIMelodyCube1;
+      break;
+    case 1:
+      callback = onNextMIDIMelodyCube2;
+      break;
+    case 2:
+      callback = onNextMIDIMelodyCube3;
+      break;
+  }
+  gPlayMIDIMelodyTimerID[ cubeId ] = setTimeout( callback, duration );
+  
 }
 
 // -- Callbacks for continuous playing
 const onNextMIDIMelodyCube1 = () => { onNextMIDIMelody( 0 ); }
 const onNextMIDIMelodyCube2 = () => { onNextMIDIMelody( 1 ); }
+const onNextMIDIMelodyCube3 = () => { onNextMIDIMelody( 2 ); }
 
 const onNextMIDIMelody = ( cubeId ) => {
   if( gMelodyBufArray[ cubeId ] === undefined ){
@@ -727,6 +761,7 @@ const stopSampleMelody = () => {
 
   if( gCubes[0] ){ stopSound( 0 ); }
   if( gCubes[1] ){ stopSound( 1 ); }
+  if( gCubes[2] ){ stopSound( 2 ); }
 
   if( gIsPlayingSampleMelody ){
       gIsPlayingSampleMelody = false;
@@ -894,8 +929,10 @@ const initialize = () => {
 
           if( cubeId === 0 ){
               gCubes[0] = connectNewCube();
-          }else{
+          }else if( cubeId === 1 ){
               gCubes[1] = connectNewCube();
+          }else{
+              gCubes[2] = connectNewCube();
           }
           
       });
