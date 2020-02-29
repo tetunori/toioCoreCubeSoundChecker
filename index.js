@@ -1,17 +1,19 @@
 
 const SUPPORT_CUBE_NUM = 2;
 
-let stringForToioJs = '\n' + 
-    '/* Sound data converted from MIDI file */\n' + 
+const showDefaultMessageCode = () => {
+
+  let stringForToioJs = '\n' + 
+    '/* Sound data */\n' + 
     '\n' + 'const melody = [\n';
-			stringForToioJs += '];' + '\n\n';
-			document.getElementById("output").innerHTML = stringForToioJs;
-document.getElementById("output").innerHTML = stringForToioJs;
-document.getElementById("output").setAttribute("class", "prettyprint lang-js linenums");
-PR.prettyPrint();
+			stringForToioJs += '];' + '\n\n\n\n\n\n\n\n';
+  
+  document.getElementById("output").innerHTML = stringForToioJs;
+  document.getElementById("output").setAttribute("class", "prettyprint lang-js linenums");
+  PR.prettyPrint();
 
-
-
+}
+showDefaultMessageCode();
 
 // File Selector
 let melodyBuf = new Array( SUPPORT_CUBE_NUM );
@@ -30,7 +32,8 @@ fileSelector.onchange = () => {
     if( isSupportedMidiData( parsedMidiData ) ){
       melodyTracksOriginal = convertMIDIToCubeSound( parsedMidiData );
       // console.log( melodyTracksOriginal );
-      updateTrackSelector( melodyTracksOriginal );
+      const selectedTrackIDs = updateTrackSelector( melodyTracksOriginal );
+      updateCodeMIDI( selectedTrackIDs, melodyTracksOriginal );
       enableMIDIButton();
     }else{
       console.log( 'Error. Unsupported file.' );
@@ -39,6 +42,22 @@ fileSelector.onchange = () => {
 	}
   
 	fileReader.readAsArrayBuffer( fileSelector.files[0] );
+
+}
+
+const getSelectedTrackIDs = () => {
+
+  let retValue = [ undefined, undefined ];
+
+  for( let cubeId of [ 1, 2 ] ){
+
+    const select = document.getElementById( 'MIDITrackCube' + cubeId );
+    retValue[ ( cubeId - 1 ) ] = select.selectedIndex;
+
+  }
+
+  console.log( retValue );
+  return retValue;
 
 }
 
@@ -101,12 +120,14 @@ const updateTrackSelector = ( tracks ) => {
   
   // Set appropriate item 
   let count = 1;
+  let retValue = [ undefined, undefined ];
   for( let trackId = 0; trackId < tracks.length; trackId++ ){
     
     if( tracks[ trackId ].length > 0 ){
 
       const select = document.getElementById( 'MIDITrackCube' + count );
       select.selectedIndex = trackId;
+      retValue[ count - 1 ] = trackId;
       count++;
       if( count > 2 ){
         break;
@@ -116,6 +137,7 @@ const updateTrackSelector = ( tracks ) => {
 
   }
 
+  return retValue;
   
 }
 
@@ -446,15 +468,18 @@ const stopSound = ( cubeID ) => {
 // Play Note
 const playNote = () => {
 
-  const note = document.getElementById( 'noteSlider' ).value;
+  const note = new Number( document.getElementById( 'noteSlider' ).value );
+  const duration = 30;
 
   for( let id of [ 0, 1 ] ){
 
     if( gCubes[ id ] && gCubes[ id ].soundChar ){
-      playSingleNote( gCubes[ id ], note, 30 );
+      playSingleNote( gCubes[ id ], note, duration );
     }
     
   }
+
+  updateCodeSingleNote( note, duration );
 
 }
 
@@ -504,7 +529,7 @@ const procKeyDown = ( code ) => {
 // Pre-installed SE
 const playPreInSE = () => {
 
-  const idSE = document.getElementById( 'preInSE' ).value;
+  const idSE = new Number( document.getElementById( 'preInSE' ).value );
 
   for( let id of [ 0, 1 ] ){
 
@@ -513,6 +538,8 @@ const playPreInSE = () => {
     }
     
   }
+
+  updateCodePreInSE( idSE );
 
 }
 
@@ -557,7 +584,7 @@ const playMIDIMelodyCore = ( cubeId ) => {
     buf[0] = 0x01;
     buf[1] = MAX_SOUND_OPERATION_NUM;
     buf.set( melodyBuf[ cubeId ].slice( 0, MAX_SOUND_OPERATION_NUM * 3 ), 2 );
-    // console.log( "MIDI playmelody buf: " + buf );
+    console.log( "MIDI playmelody buf: " + buf );
     playMelody( gCubes[ cubeId ], buf );
     duration = getDurationOfMelody( melodyBuf[ cubeId ].slice( 0, MAX_SOUND_OPERATION_NUM * 3 ) );
     melodyBuf[ cubeId ] = melodyBuf[ cubeId ].slice( MAX_SOUND_OPERATION_NUM * 3, melodyBuf[ cubeId ].length );
@@ -569,7 +596,7 @@ const playMIDIMelodyCore = ( cubeId ) => {
     buf[0] = 0x01;
     buf[1] = melodyBuf[ cubeId ].length / 3;
     buf.set( melodyBuf[ cubeId ], 2 );
-    // console.log( "MIDI playmelody buf: " + buf );
+    console.log( "MIDI playmelody buf: " + buf );
     playMelody( gCubes[ cubeId ], buf );
     duration = getDurationOfMelody( melodyBuf[ cubeId ] );
     melodyBuf[ cubeId ] = undefined;
@@ -719,6 +746,101 @@ const executeCubeCommand = () => {
     //}
 }
 
+const dexToHexString2gidits = ( dec ) => {
+
+  let retValue = '';
+
+  if( dec < 0x10 ){
+    retValue += '0'
+  }
+
+  retValue += dec.toString(16).toUpperCase();
+  return retValue;
+
+}
+
+const updateCodeSingleNote = ( note, duration ) => {
+
+  const codeText = '\n /* Play Single Note */ \n\n' + 
+    'const buf = new Uint8Array([ 0x03, 0x01, 0x01, ' + 
+    '0x' + dexToHexString2gidits( duration ) + ', ' + 
+    '0x' + dexToHexString2gidits( note ) + 
+    ', 0xFF ]); \n\n\n\n\n\n\n\n\n';
+
+  updateCode( codeText );
+
+}
+
+const updateCodePreInSE = ( idSE ) => {
+
+  const codeText = '\n /* Play Pre-installed Sound Effect */ \n\n' + 
+    'const buf = new Uint8Array([ 0x02, ' + 
+    '0x' + dexToHexString2gidits( idSE ) +  
+    ', 0xFF ]); \n\n\n\n\n\n\n\n\n';
+  
+  updateCode( codeText );
+
+}
+
+const updateCodeMIDI = ( selectedTrackIDs, melodyTracks ) => {
+
+  let codeText = '\n/* Play MIDI melody */ \n\n';
+  const MAX_SOUND_OPERATION_NUM = 59;
+  const MAX_SOUND_BINARY_NUM = 3 * MAX_SOUND_OPERATION_NUM;
+
+  for( let cubeID of [ 0, 1 ] ){
+
+    const trackID = selectedTrackIDs[ cubeID ];
+    const track = melodyTracks[ trackID ];
+    // console.log( track );
+    if( track === undefined ){
+      continue;
+    }
+
+    codeText += '/* Track ' + ( trackID + 1 ) + ' */ \n';
+
+    let count = 0;
+    let leftSoundNum = track.length;
+    while( leftSoundNum > 0 ){
+      
+      const soundBinaryNum = leftSoundNum < MAX_SOUND_BINARY_NUM ? leftSoundNum : MAX_SOUND_BINARY_NUM;
+
+      codeText += 
+      'const track' + ( trackID + 1 ) + '_' + ( count + 1 ) + ' = new Uint8Array([ 0x03, 0x01, ' + 
+        '0x' + dexToHexString2gidits( soundBinaryNum ) + ', ';
+
+      const offset = count * MAX_SOUND_BINARY_NUM;
+      const soundBinaryArray = track.slice( offset, soundBinaryNum + offset );
+      for( let item of soundBinaryArray ){
+        codeText += '0x' + dexToHexString2gidits( item ) + ', ';
+      }
+      
+      codeText = codeText.slice( 0, -2 );
+      codeText += ' ]);\n\n';
+
+      count++;
+      leftSoundNum -= soundBinaryNum;
+      
+    }
+
+  }
+
+  if( ( melodyTracks[ selectedTrackIDs[ 0 ] ] === undefined ) && 
+    ( melodyTracks[ selectedTrackIDs[ 1 ] ] === undefined ) ){
+    showDefaultMessageCode();
+  }else{
+    updateCode( codeText );
+  }
+
+}
+
+const updateCode = ( codeText ) => {
+  
+  document.getElementById( 'output' ).innerHTML = codeText;
+  document.getElementById( 'output' ).setAttribute( 'class', 'prettyprint lang-js linenums' );
+  PR.prettyPrint();
+
+}
 
 // Initialize 
 const initialize = () => {
@@ -737,21 +859,21 @@ const initialize = () => {
     }
 
     document.getElementById( 'noteSlider' ).addEventListener( "change", async ev => {
-        playNote();
+      playNote();
     });
     document.getElementById( 'noteSlider' ).addEventListener( "input", async ev => {
-        updateNoteText();
+      updateNoteText();
     });
 
     document.getElementById( "btPlayNote" ).addEventListener( "click", async ev => {
-        playNote();
+      playNote();
     });
     
     document.getElementById( 'preInSE' ).addEventListener( "change", async ev => {
-        playPreInSE();
+      playPreInSE();
     });
     document.getElementById( "btPlayPreInSE" ).addEventListener( "click", async ev => {
-        playPreInSE();
+      playPreInSE();
     });
 
     document.getElementById( "btPlaySample" ).addEventListener( "click", async ev => {
@@ -764,9 +886,16 @@ const initialize = () => {
     });
 
     document.getElementById( "btStopSample" ).addEventListener( "click", async ev => {
-        stopSampleMelody();
+      stopSampleMelody();
     });
 
+    document.getElementById( 'MIDITrackCube1' ).addEventListener( "change", async ev => {
+      updateCodeMIDI( getSelectedTrackIDs(), melodyTracksOriginal );
+    });
+    document.getElementById( 'MIDITrackCube2' ).addEventListener( "change", async ev => {
+      updateCodeMIDI( getSelectedTrackIDs(), melodyTracksOriginal );
+    });
+    
     document.getElementById( "btPlayMIDI" ).addEventListener( "click", async ev => {
       playMIDIMelody();
     });
