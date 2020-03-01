@@ -826,13 +826,17 @@ const playSampleMelodyCore = ( isUp ) => {
   const NUM_OPERATION = MAX_SOUND_OPERATION_NUM;
   const DURATION = 0x05;
 
-  for( let cubeID of CUBE_ID_ARRAY ){
-    playMelody( gCubes[ cubeID ], getSampleMelodyBuf( cubeID, isUp ) );
-  }  
+  const cmdBufArray = new Array( 3 );
 
+  for( let cubeID of CUBE_ID_ARRAY ){
+    cmdBufArray[ cubeID ] = playMelody( gCubes[ cubeID ], getSampleMelodyBuf( cubeID, isUp ) );
+  }
+  
   gPlaySampleMolodyTimerID = setTimeout( 
       isUp ? playSampleMelodyDown : playSampleMelodyUp, 
           DURATION * NUM_OPERATION * 10 );
+  
+  updateCodeSampleMelody( cmdBufArray, isUp );
 
 }
 
@@ -955,6 +959,37 @@ const updateCodeSampleSE = ( seID, cmdBuf ) => {
   
   codeText = codeText.slice( 0, -2 );
   codeText += ' ]);\n\n\n\n\n\n\n\n';
+
+  updateCode( codeText );
+
+}
+
+// -- For playing Sample Melody.
+const updateCodeSampleMelody = ( cmdBufArray, isUp ) => {
+
+  let codeText = '\n /* Play Sample Melody';
+
+  if( isUp ){
+    codeText += ': UP';
+  }else{
+    codeText += ': DOWN';
+  }
+
+  codeText += ' */ \n\n';
+  
+  let count = 1;
+  for( let cmdBuf of cmdBufArray ){
+
+    codeText += 'const buf' + count + ' = new Uint8Array([ '; 
+
+    for( let item of cmdBuf ){
+      codeText += '0x' + dexToHexString2gidits( item ) + ', ';
+    }
+    codeText = codeText.slice( 0, -2 );
+    codeText += ' ]);\n\n';
+    count++;
+
+  }
 
   updateCode( codeText );
 
