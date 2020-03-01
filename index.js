@@ -1,10 +1,12 @@
 // Global Constants
 const MAX_SOUND_OPERATION_NUM = 59;
-const CUBE_ID_ARRAY = [ 0, 1 ];
+const MAX_SOUND_BINARY_NUM = 3 * MAX_SOUND_OPERATION_NUM;
+
+const CUBE_ID_ARRAY = [ 0, 1, 2 ];
 const SUPPORT_CUBE_NUM = CUBE_ID_ARRAY.length;
 
 // Global Variables.
-const gCubes = [ undefined, undefined ];
+const gCubes = [ undefined, undefined, undefined ];
 
 
 // File Selector
@@ -86,7 +88,7 @@ const updateTrackSelector = ( tracks ) => {
   
   // Set appropriate items for each selector.
   let count = 1;
-  let retValue = [ undefined, undefined ];
+  let retValue = [ undefined, undefined, undefined ];
   for( let trackId = 0; trackId < tracks.length; trackId++ ){
     
     if( tracks[ trackId ].length > 0 ){
@@ -95,7 +97,7 @@ const updateTrackSelector = ( tracks ) => {
       select.selectedIndex = trackId;
       retValue[ count - 1 ] = trackId;
       count++;
-      if( count > 2 ){
+      if( count > SUPPORT_CUBE_NUM ){
         break;
       }
 
@@ -117,7 +119,7 @@ const enableMIDIButton = () => {
 // -- functions : Get track's index array that is selected now. 
 const getSelectedTrackIndex = () => {
 
-  const retValue = [ undefined, undefined ];
+  const retValue = [ undefined, undefined, undefined ];
 
   for( let cubeId of CUBE_ID_ARRAY ){
 
@@ -216,9 +218,6 @@ const convertMIDIToCubeSound = ( midi ) => {
 // -- functions : Padding for large size music to avoid variation of bluetooth trasmission time
 const paddingTrack = ( track ) => {
 
-  const MAX_SOUND_OPERATION_NUM = 59;
-  const MAX_SOUND_BINARY_NUM = 3 * MAX_SOUND_OPERATION_NUM;
-
   if( track.length > MAX_SOUND_BINARY_NUM ){
     
     const numChunksInTrack = Math.floor( track.length / ( MAX_SOUND_BINARY_NUM ) );
@@ -251,8 +250,11 @@ const inputNoteData = ( duration, note, velocity, target ) => {
   
   const MAX_NOTE_DURATION = 250;
   let leftDuration = duration;
-
   // console.log( duration );
+
+  if( duration === 0 ){
+    return;
+  }
 
   while( MAX_NOTE_DURATION < leftDuration ){    
     
@@ -309,7 +311,12 @@ const connectNewCube = () => {
         cube.device = device;
         if( cube === gCubes[0] ){
             turnOnLightCian( cube );
-            changeConnectCubeButtonStatus( 2, undefined, true );
+            const cubeID = 1;
+            changeConnectCubeButtonStatus( cubeID, undefined, true );
+        }else if( cube === gCubes[1] ){
+            turnOnLightGreen( cube );
+            const cubeID = 2;
+            changeConnectCubeButtonStatus( cubeID, undefined, true );
         }
         changeConnectCubeButtonStatus( undefined, cube, false );
         return device.gatt.connect();
@@ -325,13 +332,16 @@ const connectNewCube = () => {
     }).then( characteristic => {
         cube.lightChar = characteristic;
         if( cube === gCubes[0] ){
-            turnOnLightCian( cube );
-            enablePlaySampleButton();
-            enablePlayNoteButton();
-            enablePlayPreInSEButton();
-            enableMIDIButton();
+          turnOnLightCian( cube );
+          enablePlaySampleButton();
+          enablePlaySampleSEButton();
+          enablePlayNoteButton();
+          enablePlayPreInSEButton();
+          enableMIDIButton();
+        }else if( cube === gCubes[1] ){
+          turnOnLightGreen( cube );
         }else{
-            turnOnLightGreen( cube );
+          turnOnLightRed( cube );
         }
     });
 
@@ -371,6 +381,17 @@ const turnOnLightCian = ( cube ) => {
 
 }
 
+const turnOnLightRed = ( cube ) => {
+
+    // Red light
+    const buf = new Uint8Array([ 0x03, 0x00, 0x01, 0x01, 0xFF, 0x00, 0x00 ]);
+    if( ( cube !== undefined ) && ( cube.lightChar !== undefined ) ){
+        cube.lightChar.writeValue( buf );
+    }
+
+}
+
+
 // -- Play Sound effect Commands
 const playSE = ( cube, idSE ) => {
 
@@ -403,6 +424,8 @@ const playMelody = ( cube, melody ) => {
         cube.soundChar.writeValue( buf );
     }
 
+    return buf;
+
 }
 
 // -- Stop any type of sound Commands
@@ -431,12 +454,14 @@ const changeButtonStatus = ( btID, enabled ) => {
 const changeConnectCubeButtonStatus = ( idButton, cube, enabled ) => {
 
     if( idButton ){
-        changeButtonStatus( 'btConnectCube' + idButton, enabled );
+        changeButtonStatus( 'btConnectCube' + ( idButton + 1 ), enabled );
     }else{
         if( gCubes[0] === cube ){
             changeButtonStatus( 'btConnectCube1', enabled );
-        }else{
+        }else if( gCubes[1] === cube ){
             changeButtonStatus( 'btConnectCube2', enabled );
+        }else{
+            changeButtonStatus( 'btConnectCube3', enabled );
         }
     }
     
@@ -446,6 +471,18 @@ const disablePlaySampleButton = () => { changeButtonStatus( 'btPlaySample', fals
 const enablePlaySampleButton = () => { changeButtonStatus( 'btPlaySample', true ); }
 const disableStopSampleButton = () => { changeButtonStatus( 'btStopSample', false ); }
 const enableStopSampleButton = () => { changeButtonStatus( 'btStopSample', true ); }
+const disablePlaySampleSEButton = () => { 
+  changeButtonStatus( 'btPlaySampleSE1', false ); 
+  changeButtonStatus( 'btPlaySampleSE2', false ); 
+  changeButtonStatus( 'btPlaySampleSE3', false ); 
+  changeButtonStatus( 'btPlaySampleSE4', false ); 
+}
+const enablePlaySampleSEButton = () => { 
+  changeButtonStatus( 'btPlaySampleSE1', true ); 
+  changeButtonStatus( 'btPlaySampleSE2', true ); 
+  changeButtonStatus( 'btPlaySampleSE3', true ); 
+  changeButtonStatus( 'btPlaySampleSE4', true ); 
+}
 const disablePlayNoteButton = () => { changeButtonStatus( 'btPlayNote', false ); }
 const enablePlayNoteButton = () => { changeButtonStatus( 'btPlayNote', true ); }
 const disablePlayPreInSEButton = () => { changeButtonStatus( 'btPlayPreInSE', false ); }
@@ -454,6 +491,81 @@ const disablePlayMIDIButton = () => { changeButtonStatus( 'btPlayMIDI', false );
 const enablePlayMIDIButton = () => { changeButtonStatus( 'btPlayMIDI', true ); }
 const disableStopMIDIButton = () => { changeButtonStatus( 'btStopMIDI', false ); }
 const enableStopMIDIButton = () => { changeButtonStatus( 'btStopMIDI', true ); }
+
+
+// Play Sample SE
+// -- main function
+const playSampleSE = ( seId ) => {
+
+  let melodyBuf;
+
+  switch( seId ){
+    case 1:
+      melodyBuf = getSampleMelodyDroid();
+      break;
+    case 2:
+      melodyBuf = getSampleMelodyGet();
+      break;
+    case 3:
+      melodyBuf = getSampleMelodyThrow();
+      break;
+    case 4:
+      melodyBuf = getSampleMelodyEnergy();
+      break;
+  }
+
+  const cmdBuf = playMelody( gCubes[ 0 ], melodyBuf );
+  playMelody( gCubes[ 1 ], melodyBuf );
+  playMelody( gCubes[ 2 ], melodyBuf );
+
+  updateCodeSampleSE( seId, cmdBuf );
+
+}
+
+const getSampleMelodyDroid = () => {
+  
+  const HIGHEST_NOTE = 105; // A8
+  const LOWEST_NOTE  = 72;  // C6
+  const OPERATION_NUM = 20;
+  const DURATION = 4; // 40 msec
+  const VELOCITY = 0xFF; 
+
+  const buf = new Uint8Array( 2 + OPERATION_NUM * 3 );
+
+  buf[ 0 ] = 0x01;
+  buf[ 1 ] = OPERATION_NUM;
+
+  // Voice sounds are generated randomly.
+  for( let index = 0; index < OPERATION_NUM; index++ ){
+
+    buf[ 2 + 3 * index ] = DURATION;
+    buf[ 3 + 3 * index ] = getRandomNum( LOWEST_NOTE, HIGHEST_NOTE );;
+    buf[ 4 + 3 * index ] = VELOCITY;    
+
+  }
+
+  return buf;
+  
+}
+
+const getRandomNum = ( min, max ) => {
+  return Math.floor( Math.random() * ( max + 1 - min ) ) + min;
+}
+
+const getSampleMelodyGet = () => {
+  return new Uint8Array([ 0x01, 0x02, 0x8, 83, 0xFF, 64, 88, 0xFF ]);
+}
+
+const getSampleMelodyThrow = () => {
+  return new Uint8Array([ 0x01, 0x03, 0x2, 43, 0xFF, 0x2, 55, 0xFF, 0x2, 67, 0xFF ]);
+}
+
+const getSampleMelodyEnergy = () => {
+  return new Uint8Array([ 0x01, 27, 3, 60, 255, 3, 55, 255, 3, 60, 255, 3, 64, 255, 3, 67, 255, 
+    3, 72, 255, 3, 67, 255, 3, 56, 255, 3, 60, 255, 3, 63, 255, 3, 68, 255, 3, 63, 255, 3, 68, 255, 
+    3, 72, 255, 3, 75, 255, 3, 80, 255, 3, 75, 255, 3, 58, 255, 3, 62, 255, 3, 65, 255, 3, 70, 255, 
+    3, 65, 255, 3, 70, 255, 3, 74, 255, 3, 77, 255, 3, 82, 255, 3, 77, 255 ]);
+}
 
 
 // Play Note
@@ -542,14 +654,25 @@ const playPreInSE = () => {
 // Play MIDI Melody
 // -- Main function
 let gIsPlayingMIDIMelody = false;
-let gPlayMIDIMelodyTimerID = [ undefined, undefined ];
+let gPlayMIDIMelodyTimerID = [ undefined, undefined, undefined ];
 
 const playMIDIMelody = () => {
+
+  // Clear TimerID
+  for( let id of CUBE_ID_ARRAY ){
+
+    if( gPlayMIDIMelodyTimerID[ id ] !== undefined ){
+      clearTimeout( gPlayMIDIMelodyTimerID[ id ] );
+      gPlayMIDIMelodyTimerID[ id ] = undefined;
+    }
+
+  }
 
   gIsPlayingMIDIMelody = true;
   disablePlayMIDIButton();
   enableStopMIDIButton();
   disablePlaySampleButton();
+  disablePlaySampleSEButton();
   disablePlayNoteButton();
   disablePlayPreInSEButton();
 
@@ -576,22 +699,21 @@ const playMIDIMelodyCore = ( cubeId ) => {
   }
 
   let duration;
-  const MAX_SOUND_OPERATION_BINSIZE = MAX_SOUND_OPERATION_NUM * 3;
-  if( melodyBufArray.length > MAX_SOUND_OPERATION_BINSIZE ){
+  if( melodyBufArray.length > MAX_SOUND_BINARY_NUM ){
 
     // Operation length is MAX_SOUND_OPERATION_NUM. 
-    const buf = new Uint8Array( MAX_SOUND_OPERATION_BINSIZE + 2 );
+    const buf = new Uint8Array( MAX_SOUND_BINARY_NUM + 2 );
 
     buf[0] = 0x01;
     buf[1] = MAX_SOUND_OPERATION_NUM;
-    const currentMelodyArray = melodyBufArray.slice( 0, MAX_SOUND_OPERATION_BINSIZE );
+    const currentMelodyArray = melodyBufArray.slice( 0, MAX_SOUND_BINARY_NUM );
     buf.set( currentMelodyArray, 2 );
     // console.log( 'MIDI playmelody buf: ' + buf );
 
     playMelody( gCubes[ cubeId ], buf );
     duration = getDurationOfMelody( currentMelodyArray );
     gMelodyBufArray[ cubeId ] = 
-      melodyBufArray.slice( MAX_SOUND_OPERATION_BINSIZE, melodyBufArray.length );
+      melodyBufArray.slice( MAX_SOUND_BINARY_NUM, melodyBufArray.length );
 
   }else{
 
@@ -607,15 +729,29 @@ const playMIDIMelodyCore = ( cubeId ) => {
     playMelody( gCubes[ cubeId ], buf );
     duration = getDurationOfMelody( currentMelodyArray );
     gMelodyBufArray[ cubeId ] = undefined;
+
   }
-  gPlayMIDIMelodyTimerID[ cubeId ] = 
-    setTimeout( ( cubeId === 0 ) ? onNextMIDIMelodyCube1 : onNextMIDIMelodyCube2, duration );
+
+  let callback = undefined;
+  switch( cubeId ){
+    case 0:
+      callback = onNextMIDIMelodyCube1;
+      break;
+    case 1:
+      callback = onNextMIDIMelodyCube2;
+      break;
+    case 2:
+      callback = onNextMIDIMelodyCube3;
+      break;
+  }
+  gPlayMIDIMelodyTimerID[ cubeId ] = setTimeout( callback, duration );
 
 }
 
 // -- Callbacks for continuous playing
 const onNextMIDIMelodyCube1 = () => { onNextMIDIMelody( 0 ); }
 const onNextMIDIMelodyCube2 = () => { onNextMIDIMelody( 1 ); }
+const onNextMIDIMelodyCube3 = () => { onNextMIDIMelody( 2 ); }
 
 const onNextMIDIMelody = ( cubeId ) => {
   if( gMelodyBufArray[ cubeId ] === undefined ){
@@ -634,6 +770,7 @@ const endPlayMIDIMelody = () => {
     disableStopMIDIButton();
     enablePlayMIDIButton();
     enablePlaySampleButton();
+    enablePlaySampleSEButton();
     enablePlayNoteButton();
     enablePlayPreInSEButton();
   }
@@ -660,6 +797,7 @@ const stopMIDIMelody = () => {
     disableStopMIDIButton();
     enablePlayMIDIButton();
     enablePlayNoteButton();
+    enablePlaySampleSEButton();
     enablePlayPreInSEButton();
     enablePlaySampleButton();
   }
@@ -727,11 +865,13 @@ const stopSampleMelody = () => {
 
   if( gCubes[0] ){ stopSound( 0 ); }
   if( gCubes[1] ){ stopSound( 1 ); }
+  if( gCubes[2] ){ stopSound( 2 ); }
 
   if( gIsPlayingSampleMelody ){
       gIsPlayingSampleMelody = false;
       disableStopSampleButton();
       enablePlaySampleButton();
+      enablePlaySampleSEButton();
       enablePlayNoteButton();
       enablePlayPreInSEButton();
       enablePlayMIDIButton();
@@ -789,12 +929,27 @@ const updateCodePreInSE = ( idSE ) => {
 
 }
 
+// -- For playing Sample SE.
+const updateCodeSampleSE = ( seID, cmdBuf ) => {
+
+  let codeText = '\n /* Play Sample Sound Effect ' + 
+    seID + ' */ \n\n' + 'const buf = new Uint8Array([ '; 
+  
+  for( let item of cmdBuf ){
+    codeText += '0x' + dexToHexString2gidits( item ) + ', ';
+  }
+  
+  codeText = codeText.slice( 0, -2 );
+  codeText += ' ]);\n\n\n\n\n\n\n\n';
+
+  updateCode( codeText );
+
+}
+
 // -- For playing MIDI.
 const updateCodeMIDI = ( selectedTrackIDs, melodyTracks ) => {
 
   let codeText = '\n/* Play MIDI melody */ \n\n';
-  const MAX_SOUND_OPERATION_NUM = 59;
-  const MAX_SOUND_BINARY_NUM = 3 * MAX_SOUND_OPERATION_NUM;
 
   for( let cubeID of CUBE_ID_ARRAY ){
 
@@ -818,7 +973,7 @@ const updateCodeMIDI = ( selectedTrackIDs, melodyTracks ) => {
       codeText += 
       'const track' + ( trackID + 1 ) + '_' + ( count + 1 ) +
       ' = new Uint8Array([ 0x03, 0x01, ' + 
-      '0x' + dexToHexString2gidits( soundBinaryNum ) + ', ';
+      '0x' + dexToHexString2gidits( soundBinaryNum / 3 ) + ', ';
 
       const offset = count * MAX_SOUND_BINARY_NUM;
       const soundBinaryArray = track.slice( offset, soundBinaryNum + offset );
@@ -837,7 +992,7 @@ const updateCodeMIDI = ( selectedTrackIDs, melodyTracks ) => {
 
   }
 
-  // All tracks are OFF
+  // If all tracks are OFF
   if( ( melodyTracks[ selectedTrackIDs[ 0 ] ] === undefined ) && 
     ( melodyTracks[ selectedTrackIDs[ 1 ] ] === undefined ) ){
     showDefaultMessageCode();
@@ -894,8 +1049,10 @@ const initialize = () => {
 
           if( cubeId === 0 ){
               gCubes[0] = connectNewCube();
-          }else{
+          }else if( cubeId === 1 ){
               gCubes[1] = connectNewCube();
+          }else{
+              gCubes[2] = connectNewCube();
           }
           
       });
@@ -924,6 +1081,7 @@ const initialize = () => {
   document.getElementById( 'btPlaySample' ).addEventListener( 'click', async ev => {
       disablePlaySampleButton();
       disablePlayNoteButton();
+      disablePlaySampleSEButton();
       disablePlayPreInSEButton();
       disablePlayMIDIButton();
       enableStopSampleButton();
@@ -931,6 +1089,20 @@ const initialize = () => {
   });
   document.getElementById( 'btStopSample' ).addEventListener( 'click', async ev => {
     stopSampleMelody();
+  });
+
+  // For play sample SE
+  document.getElementById( 'btPlaySampleSE1' ).addEventListener( 'click', async ev => {
+    playSampleSE( 1 );
+  });
+  document.getElementById( 'btPlaySampleSE2' ).addEventListener( 'click', async ev => {
+    playSampleSE( 2 );
+  });
+  document.getElementById( 'btPlaySampleSE3' ).addEventListener( 'click', async ev => {
+    playSampleSE( 3 );
+  });
+  document.getElementById( 'btPlaySampleSE4' ).addEventListener( 'click', async ev => {
+    playSampleSE( 4 );
   });
 
   // For MIDI play
