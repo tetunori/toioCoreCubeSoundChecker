@@ -823,14 +823,31 @@ const playSampleMelodyDown = () => { playSampleMelodyCore( false ); }
 // -- Core function
 const playSampleMelodyCore = ( isUp ) => {
     
-  const REPEAT_COUNT = 0x01;
   const NUM_OPERATION = MAX_SOUND_OPERATION_NUM;
   const DURATION = 0x05;
-  const LONG_DURATION = 0x64;
-  const BASE_NOTE = 0x1F;
-  const MAX_VOLUME = 0xFF;
 
+  for( let cubeID of CUBE_ID_ARRAY ){
+    playMelody( gCubes[ cubeID ], getSampleMelodyBuf( cubeID, isUp ) );
+  }  
+
+  gPlaySampleMolodyTimerID = setTimeout( 
+      isUp ? playSampleMelodyDown : playSampleMelodyUp, 
+          DURATION * NUM_OPERATION * 10 );
+
+}
+
+// Generate sample melody
+const getSampleMelodyBuf = ( cubeID, isUp ) => {
+  
+  const REPEAT_COUNT = 0x01;
+  const LONG_DURATION = 0x64;
+  const BASE_NOTE = 0x1F + cubeID * 5;
+  const MAX_VOLUME = 0xFF;
+  const DURATION = 0x05;
+
+  const NUM_OPERATION = MAX_SOUND_OPERATION_NUM;
   const melody = new Uint8Array( 2 + 3 * NUM_OPERATION );
+
   melody[0] = REPEAT_COUNT;
   melody[1] = NUM_OPERATION;
 
@@ -846,11 +863,8 @@ const playSampleMelodyCore = ( isUp ) => {
 
   }
   melody[ 3 * NUM_OPERATION - 1 ] = LONG_DURATION;
-  playMelody( gCubes[0], melody );
 
-  gPlaySampleMolodyTimerID = setTimeout( 
-      isUp ? playSampleMelodyDown : playSampleMelodyUp, 
-          DURATION * NUM_OPERATION * 10 );
+  return melody;
 
 }
 
