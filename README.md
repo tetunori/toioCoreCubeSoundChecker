@@ -17,7 +17,7 @@ Now, WebBluetooth works on the limited browser/OS. Please check the support stat
 
 ## Single Note
  - Select a note via slider in the below region. Although the sound will be automatically played, you can play the current note by pushing `PLAY NOTE` button.
- <BR><img src="./images/singleNote.png" width="300px">
+ <BR><img src="./images/singleNote.png" width="400px">
  - You can also use left/right cursor keys to select a note.
 
 ## Pre-installed Sound Effect(SE)
@@ -27,17 +27,17 @@ Now, WebBluetooth works on the limited browser/OS. Please check the support stat
 
 ## Play from MIDI file
  - Drag&drop a MIDI file into the square below or click it, then the file will be analyzed and some tracks are set in the dropdown next to the string 'Cube N:'. Simultaneously, `PLAY` button under the square will be enabled.
- <BR><img src="./images/midi.png" width="300px">
+ <BR><img src="./images/midi.png" width="600px">
  - After Selecting track with the dropdown, push `PLAY` button. Then you can hear the sound from Cubes.
  - **CAUTION**: This tool has a problem with synchronization between Cubes. I hope to fix it in the next version if possible.
 
 ## Appendix A. Copy code.
  - All melody codes are shown in this region. Anytime, you can copy by pushing this button!
- <BR><img src="./images/copycode.png" width="300px">
+ <BR><img src="./images/copycode.png" width="600px">
 
 ## Appendix B. Sample sounds.
  - Some sample SE and a molody are prepared in this tool. You can enjoy by just ressing these play buttons.
- <BR><img src="./images/sample.png" width="300px">
+ <BR><img src="./images/sample.png" width="500px">
 
 # Licence
 This software is released under the MIT License, see LICENSE.
