@@ -2,18 +2,19 @@
 Version 0.8.0  
 <img src="./images/screenShot.png" width="800px">
 
-& youtube link...
+[Game Music Sample](https://youtu.be/LnFHprQWCl4) ↓  
+[![youtube](http://img.youtube.com/vi/LnFHprQWCl4/0.jpg)](http://www.youtube.com/watch?v=LnFHprQWCl4)
 
 # Description
 A tool enables us to check sound function of toio™Core Cube by using MIDI audio source and so on.   
-See [this article](https://qiita.com/tetunori_lego/items/*******) in detail. You can try [here](https://tetunori.github.io/toioCoreCubeSoundChecker/).  
+See [this article](https://qiita.com/tetunori_lego/items/42f4bad7fdcd7d31d8f6) in detail. You can try [here](https://tetunori.github.io/toioCoreCubeSoundChecker/).  
 Now, WebBluetooth works on the limited browser/OS. Please check the support status on [Can I Use](https://caniuse.com/#feat=web-bluetooth).
 
 # Usage
 ## Preparation
 1. Turn the Cubes on. This tool supports up to **3** Cubes.
 2. Open [this tool](https://tetunori.github.io/toioCoreCubeSoundChecker/). Google Chrome is highly recommended.
-3. Press "Connect Cube N" buttons and select Cube one after another.
+3. Press `Connect Cube N` buttons and select Cube one after another. If Cube connect with PC, LED under Cube will light in Blue, Green and Red respectively.
 4. If the tool is ready, some buttons will be enabled.
 
 ## Single Note
